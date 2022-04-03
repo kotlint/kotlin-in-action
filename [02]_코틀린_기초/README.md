@@ -102,20 +102,16 @@ Parameters have very short JVM names on purpose: these names appear in all gener
     ```
 - __d1__
   - 사용자 지정 형식의 메타데이터, 형식은 종류에 따라 다를 수 있다.(또는 아예 없을 수도 있다.)
-  - ```java
-    /**
-     * Metadata in a custom format. The format may be different (or even absent) for different kinds.
-     */
+  - ```
+    /** Metadata in a custom format. The format may be different (or even absent) for different kinds. */
     @get:JvmName("d1")
     val data1: Array<String> = [],
     ```
 - __d2__
   -  메타데이터에서 발생하는 문자열 배열로, 상수 풀에 이미 있는 문자열을 재사용할 수 있도록 일반 텍스트로 작성된다. 그런 다음 이 문자열은 이 배열의 정수 인덱스에 의해 메타데이터에서 인덱싱될 수 있다.
   - ```java
-    /**
-     * An addition to [data1]: array of strings which occur in metadata, written in plain text so that strings already present
-     * in the constant pool are reused. These strings may be then indexed in the metadata by an integer index in this array.
-     */
+     // An addition to [data1]: array of strings which occur in metadata, written in plain text so that strings already present
+     // in the constant pool are reused. These strings may be then indexed in the metadata by an integer index in this array.
     @get:JvmName("d2")
     val data2: Array<String> = [],
     ```
@@ -124,3 +120,26 @@ Parameters have very short JVM names on purpose: these names appear in all gener
   
 자바에서는 모든 제어 구조가 문(statement)인 반면, 코틀린에서는 루프를 제외한 대부분의 제어 구조가 식(expression)이다.
   
+```kotlin
+fun max(a: Int, b: Int) = if (a > b) a else b
+```
+
+정적 타입 지정언어임에도 불구하고 함수의 반환타입을 생략할 수 있는 이유는 `타입 추론(Type inference)` 때문이다.
+
+# 변경 가능한 변수, 변경 불가능한 변수
+
+- __val__
+    - immutable variable
+    - Java 의 final 변수에 해당
+- __var__
+    - mutable variable
+- __전략__
+    - 기본으로 val 을 사용하고 변경이 필요한 경우에만 var 을 사용한다.
+
+# 문자열 템플릿
+
+- `$변수명`
+    - ```kotlin
+      // 한글을 문자열 템플릿에서 사용할 때 { } 를 꼭 붙이자. 한글이 아니더라도 중괄호를 쓰는 습관을 들이자.
+      println("${name}님 반가워요")
+      ```
