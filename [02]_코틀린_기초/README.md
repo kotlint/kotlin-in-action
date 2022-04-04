@@ -143,3 +143,166 @@ fun max(a: Int, b: Int) = if (a > b) a else b
       // 한글을 문자열 템플릿에서 사용할 때 { } 를 꼭 붙이자. 한글이 아니더라도 중괄호를 쓰는 습관을 들이자.
       println("${name}님 반가워요")
       ```
+    - ```kotlin
+      // 중괄호로 둘러싼 식 안에서 큰 따옴표 사용
+      println("Hello, ${if (args.size > 0) args[0] else "someone"}!")
+      ```
+
+# 클래스
+
+- __클래스 구조__
+    - 이름
+    - 헤더: 기본 생성자, 매개변수 등
+    - 본문: 중괄호로 묶인 부분
+    - ```kotlin
+      class User(val name: String) { }
+      ```
+- __생성자__
+    - 기본 생성자(Primary Constructor): 클래스 헤더의 일부이며, 클래스 이름 뒤에 선언한다.
+        - ```kotlin
+          // constructor 키워드 생략 가능
+          class User constructor(val name: String) { }
+          ```
+        - 기본 생성자에 어노테이션이나, 접근 제한자(가시성 수정자)가 없으면 생략 가능하다.
+    - 보조 생성자(Secondary Constructor)
+
+아래 코드의 동작 순서를 예측해 보자.
+          
+```java
+class InitOrderDemo(name: String) {
+    // 속성 Initializer
+    val firstProperty = "First property: $name".also(::println)
+
+    // Initializer Block
+    init {
+        println("First initializer block that prints $name")
+    }
+
+    val secondProperty = "Second property: ${name.length}".also(::println)
+
+    init {
+        println("Second initializer block that prints ${name.length}")
+    }
+}
+
+fun main(args: Array<String>) {
+    InitOrderDemo("JungHo")
+}
+```
+
+위 코드를 디컴파일해서 간략하게 보면 다음과 같다.
+
+```java
+public final class InitOrderDemo {
+   @NotNull
+   private final String firstProperty;
+   @NotNull
+   private final String secondProperty;
+
+   @NotNull
+   public final String getFirstProperty() {
+      return this.firstProperty;
+   }
+
+   @NotNull
+   public final String getSecondProperty() {
+      return this.secondProperty;
+   }
+
+   public InitOrderDemo(@NotNull String name) {
+      Intrinsics.checkNotNullParameter(name, "name");
+      super();
+      String var2 = "First property: " + name;
+      System.out.println(var2);
+      this.firstProperty = var2;
+      var2 = "First initializer block that prints " + name;
+      System.out.println(var2);
+      var2 = "Second property: " + name.length();
+      System.out.println(var2);
+      this.secondProperty = var2;
+      var2 = "Second initializer block that prints " + name.length();
+      System.out.println(var2);
+   }
+}
+```
+
+즉, `클래스 본문 = 생성자 본문` 이라고 생각하면 된다.
+
+## 보조 생성자
+
+말 그대로 주 생성자 외에, 다른 생성자를 만드는 경우를 의미한다. 즉, `오버로딩한 생성자`라고 보면된다.
+
+아래 코드가 어떻게 디컴파일될 지 예측해보자.
+
+```kotlin
+class InitOrderDemo(name: String) {
+    constructor(key: Long): this(
+        name = key.toString()
+    )
+}
+```
+
+디컴파일 결과는 다음과 같다.
+
+```java
+public final class InitOrderDemo {
+   public InitOrderDemo(@NotNull String name) {
+      Intrinsics.checkNotNullParameter(name, "name");
+      super();
+   }
+
+   public InitOrderDemo(long key) {
+      this(String.valueOf(key));
+   }
+}
+```
+
+> 디컴파일 결과를 유심하게 본 사람은 눈치 챘을 것이다. 코틀린의 기본 접근 제한자는 public 이며 생략 가능하다. 또한, 기본이 final 로 되어있다.
+
+# 프로퍼티
+
+> 클래스의 목적은 데이터의 캡슐화(encapsulation)이다.
+
+자바에서는 필드와 접근자를 묶어 `프로퍼티(property)`라고 부른다.
+
+```kotlin
+class Person(
+    // 읽기 전용 프로퍼티로, 코틀린은 비공개 필드와 공개 Getter 를 제공한다.
+    val name: String,
+    // 쓸 수 있는 프로퍼티로, 코틀린은 비공개 필드, 공개 Getter, Setter 를 제공한다.
+    val isMarried: Boolean
+)
+```
+
+# 커스텀 접근자
+
+```kotlin
+class InitOrderDemo(name: String) {
+    // 자체 값을 저장하는 필드가 필요 없다. 게터만 존재한다.
+    val firstProperty: String
+        get() {
+            return "FIRST_PROPERTY"
+        }
+}
+
+// 호출
+val orderDemo = InitOrderDemo("JungHo")
+// getFirstProperty 메서드를 호출한 것이라고 생각하면 된다.
+orderDemo.firstProperty
+```
+
+디컴파일 결과를 예측해보자.
+
+```java
+public final class InitOrderDemo {
+   @NotNull
+   public final String getFirstProperty() {
+      return "FIRST_PROPERTY";
+   }
+
+   public InitOrderDemo(@NotNull String name) {
+      Intrinsics.checkNotNullParameter(name, "name");
+      super();
+   }
+}
+```
