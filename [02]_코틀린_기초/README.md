@@ -306,3 +306,84 @@ public final class InitOrderDemo {
    }
 }
 ```
+
+# enum
+
+- enum 은 soft keyword 라고 부른다.
+    - class 의 앞에 선언 될 때만 특별한 의미를 지니고, 그 외에는 enum 을 변수명에 사용할 수 있다.
+
+## values(), valueOf()
+
+EnumClass 에서 자체적으로 상수를 가져오기 위한 values() 와 valueof() 를 제공한다.
+
+```kotlin
+EnumClass.valueOf(value: String): EnumClass
+EnumClass.values(): Array<EnumClass>
+```
+
+만약에 valueOf 의 함수의 파라미터에 넘긴 value 값에 일치하는 상수가 없다면 IllegalArgumentException 을 발생시킨다.
+
+> inline 함수를 만들어서 아래와 같이 응용해서 사용할 수 있다.
+
+```kotlin
+enum class RGB { RED, GREEN, BLUE }
+
+inline fun <reified T : Enum<T>> printAllValues() {
+    print(enumValues<T>().joinToString { it.name })
+}
+
+fun test() {
+    printAllValues<RGB>() // RED, GREEN, BLUE
+}
+```
+
+## Anonoymous classes
+
+enum 상수들은 자체적으로 익명 클래스를 가질 수 있다.
+
+```kotlin
+enum class ProtocolState {
+    WAITING {
+        override fun signal() = TALKING
+    },
+
+    TALKING {
+        override fun signal() = WAITING
+    };
+
+    abstract fun signal(): ProtocolState
+}
+```
+
+# when
+
+when 은 자바의 switch 같은 역할을 한다.
+
+```kotlin
+fun mix(c1: Color, c2: Color) = when (setOf(c1, c2)) {
+    setOf(Color.RED, Color.YELLOW) -> "ORANGE"
+    else -> throw Exception("Dirty Color")
+}
+```
+
+코틀린 1.3 부터는 when 의 대상을 변수에 대입할 수 있다.
+
+```kotlin
+fun Request.getBody() = 
+    when (val response = executeRequest()) {
+        is Success -> response.body
+        is HttpError -> throw HttpException(response.status)
+    }
+```
+
+이러한 방식의 장점은 when 문 안에서만 사용하는 변수를 명확하게 표시할 수 있다. (기존에는 when 밖에 선언되어 있는 변수에 식의 결과 값을 대입하고 when 을 사용해야 했다.)
+
+when 은 인자가 존재하지 않아도 된다. 대신 각 분기의 조건이 Boolean 결과를 반환해야 한다.
+
+```kotlin
+fun mixOptimized(c1: Color, c2: Color) = 
+    when {
+        c1 == RED && c2 == YELLOW -> ORANGE
+        else -> throw Exception("Dirty Color")
+    }
+```
