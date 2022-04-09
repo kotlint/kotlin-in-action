@@ -395,7 +395,7 @@ fun mixOptimized(c1: Color, c2: Color) =
 ```java
 if (a instanceof Dog){  
    Dog dog = (Dog) a;
-   dog.bark();
+   dog.name;
    ...  
 }  
 ```
@@ -405,7 +405,7 @@ if (a instanceof Dog){
 
 ```kotlin
 if (a instanceof Dog){  
-   a.bark()
+   a.name
    ...
 }  
 ```
@@ -562,5 +562,56 @@ fun readNumber(reader: BufferedReader) {
 }
 ```
 
+## Result
 
+try - catch - finally 구문은 Java 스럽다. 뭔가 좀 더 `코틀린스럽게 Exception Handling` 을 하고 싶다.
 
+코틀린 1.3 에서는 Result 클래스와 runCatching 이라는 것을 제공해 준다. (kotlin 패키지안에 존재한다.)
+
+> runCatching 
+
+```kotlin
+/**
+ * Calls the specified function [block] and returns its encapsulated result if invocation was successful,
+ * catching any [Throwable] exception that was thrown from the [block] function execution and encapsulating it as a failure.
+ */
+@InlineOnly
+@SinceKotlin("1.3")
+public inline fun <R> runCatching(block: () -> R): Result<R> {
+    return try {
+        Result.success(block())
+    } catch (e: Throwable) {
+        Result.failure(e)
+    }
+}
+```
+
+아래와 같은 예제 코드를 만들었다.
+
+```kotlin
+// NumberFormatException 발생 가능성이 있는 함수
+fun read(reader: BufferedReader): Int {
+    return reader.readLine().toInt()
+}
+```
+
+```kotlin
+fun exceptionHandling() {
+    val reader = BufferedReader(InputStreamReader(System.`in`))
+    runCatching {
+        read(reader)
+    }.onSuccess {
+        println("do Something")
+    }.onFailure {
+        e -> e.printStackTrace()
+    }.also {
+        println("do finally here")
+    }
+}
+```
+
+exceptionHandling() 을 실행하고 runCatching 구문에서 예외가 발생한다면 onFailure 에서 잡힐 것이고, 끝나면 finally 구문에 해당하는 also 가 실행될 것이다. 예외가 발생하지 않는다면 onSuccess 안의 로직들을 실행할 것이다.
+
+## References
+
+- https://developer88.tistory.com/257
