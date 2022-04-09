@@ -387,3 +387,180 @@ fun mixOptimized(c1: Color, c2: Color) =
         else -> throw Exception("Dirty Color")
     }
 ```
+
+# 스마트 캐스트
+
+자바에서는 `instanceof` 키워드로 타입을 검사했다. 그리고 타입이 올바르면, `캐스팅`을 진행해야 했다.
+
+```java
+if (a instanceof Dog){  
+   Dog dog = (Dog) a;
+   dog.bark();
+   ...  
+}  
+```
+
+코틀린에서는 `is` 라는 키워드로 변수 타입을 검사한다. 코틀린은 is 로 타입을 검사하고 나면 개발자가 굳이 변수를 원하는 타입으로 캐스팅하지 않아도 된다. 왜냐하면 컴파일러가
+대신 캐스팅을 수행해주기 때문이다. 이를 `스마트 캐스트(smart cast)`라고 한다.
+
+```kotlin
+if (a instanceof Dog){  
+   a.bark()
+   ...
+}  
+```
+
+스마트 캐스트가 동작하기 위해서는 is 로 변수에 든 값의 타입을 검사한 다음에 그 값이 `바뀔 수 없는 경우`에만 동작한다. 따라서, 스마트 캐스트를 사용한다면, 그 프로퍼티는 `val` 이며 커스텀 접근자를 사용하면 안된다.
+
+# 명시적으로 캐스팅하기
+
+코틀린에서는 `as` 라는 키워드를 사용하여 원하는 타입으로 변경할 수 있다.
+
+```kotlin
+// In Java - int n = (Integer) a
+val n = a as Num
+```
+
+# while 과 for 루프
+
+> 코틀린의 while 문은 자바와 동일하기 때문에 생략하겠다.
+
+코틀린에서는 자바의 for 루프에 해당하는 요소가 없다. 대신 `range` 라는 것이 존재한다.
+
+```kotlin
+val oneToTen = 1..10
+```
+```kotlin
+// 100 downTo 1 > 100부터 1까지
+// step 2 > 2 단계씩 진행
+for (i in 100 downTo 1 step 2) {
+    ...
+}
+
+// 1부터 100까지
+for (i in 1..100) {
+    ...
+}
+```
+
+`..` 은 항상 우항을 포함한다. 즉, 1..100 은 1부터 100까지를 의미한다. 만약에, 1부터 99까지(끝 값을 포함하지 않는 반만 닫힌 범위, half-closed range, 반폐구간 또는 반개구간)에
+대해 이터레이션하면 편할 때가 있는데 `until` 이라는 키워드를 사용하면 된다.
+
+```kotlin
+// 0 ~ size-1
+for (x in 0 until size)
+```
+
+## 맵에 대한 이터레이션
+
+```kotlin
+// 맵의 키와 값을 두 변수에 대입한다.
+for ((letter, binary) in binaryReps) {
+    ...
+}
+```
+
+인덱스와 함께 컬렉션을 이터레이션할 수 있다.
+
+```kotlin
+for ((index, element) in list.withIndex()) {
+   ... 
+}
+```
+
+## in 으로 컬렉션이나 범위의 원소 검사
+
+```kotlin
+fun isDigit(c: Char) = c in '0'..'9'
+fun isNotDigit(c: Char) = c !in '0'..'9'
+```
+
+특정 문자열이 집합에 속하는지 검사할 수 있다.
+
+```kotlin
+println("Kotlin" in setOf("Java", "Scala"))
+```
+
+# 예외 처리
+
+코틀린의 예외 처리는 자바와 비슷하다. `throw` 를 사용하여 예외를 던질 수 있다.
+
+```kotiln
+val response = when (request.type) {
+    PENDING -> doSomething1()
+    DENY -> doSomething2()
+    else -> throw NotFoundTypeException()
+}
+```
+
+## try, catch, finally
+
+코틀린과 자바의 가장 큰 차이는 throws 절이 코드에 없다는 점이다.
+
+```java
+// In Java
+public void create() throws IOException {
+    // do something
+}
+```
+
+```kotlin
+fun create() {
+    // do something
+}
+```
+
+자바에서 IOException 은 checked exception 이기 때문에 명시적으로 처리해야 한다. 반면, 코틀린은 checked exception 과 unchecked exception 을 구별하지 않는다.
+
+## 코틀린이 예외를 구별하지 않는 이유
+
+> https://kotlinlang.org/docs/exceptions.html#the-nothing-typeS
+  
+StringBuilder 를 사용하는 코드를 작성한다고 가정하자.
+
+```java
+Appendable append(CharSequence csq) throws IOException;
+```
+
+append 시 IO 작업을 수행할 수도 있기 때문에 메서드 시그니처에 IOException 이 붙은 것을 볼 수 있다. 따라서, 아래와 같이 try-catch 를 작성해야 한다.
+
+아래와 같은 코드는 좋은 코드일까?
+
+```java
+try {
+    log.append(message) 
+} catch (IOException e) {
+    // Must be safe
+}
+```
+
+Effective Java 3. Item 77 을 보면 예외 처리란, 예외상황에 적절한 처리를 하기 위해 존재한다라고 설명되어있다. 위와 같은 코드를 `예외 블랙홀` 이라고 한다. 
+
+> 예외 블랙홀은 아무 예외도 처리하지 않거나. e.printStackTrace 로 로그만 출력하는 경우를 의미한다.
+
+Bruce Eckel 이라는 사람은 Checked Exception 에 대해서 아래와 같이 말한다.
+
+> 소규모 프로그램을 조사하면 예외 사양을 요구하는 것이 개발자 생산성을 향상시키고 코드 품질을 향상시킬 수 있다는 결론으로 이어집니다. 그러나 대규모 소프트웨어 프로젝트의 경험은 다른 결과를 나타냅니다. 생산성은 감소하고 코드 품질은 거의 또는 전혀 증가하지 않습니다.
+
+- [The Trouble with Checked Exceptions (Anders Hejlsberg)](https://www.artima.com/articles/the-trouble-with-checked-exceptions)
+- [Java's checked exceptions were a mistake (Rod Waldhoff)](https://radio-weblogs.com/0122027/stories/2003/04/01/JavasCheckedExceptionsWereAMistake.html)
+- [Checked Exceptions Are Of Dubious Value](http://wiki.c2.com/?CheckedExceptionsAreOfDubiousValue)
+- [Exception Tunneling](http://wiki.c2.com/?ExceptionTunneling)
+
+__즉, 자바에서 Checked Exception 이 발생하는 코드를 작성하다보면 예외 블랙홀이 생길 수도 있고, 대규모 소프트웨어 프로젝트에서 생산성과 코드의 품질이 감소하기 때문에 코틀린에서는 Exception 을 구분하지 않는다.__
+
+코틀린의 try-catch 구문은 Expression 이기 때문에 아래와 같이 사용할 수 있다.
+
+```kotlin
+// catch 에서 값 반환하기
+fun readNumber(reader: BufferedReader) {
+    val number = try {
+        Integer.parseInt(reader.readLine())
+    } catch (e: NumberFormatException) {
+        null
+    }
+}
+```
+
+
+
