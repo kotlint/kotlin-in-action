@@ -270,7 +270,7 @@ class Person(
     // 읽기 전용 프로퍼티로, 코틀린은 비공개 필드와 공개 Getter 를 제공한다.
     val name: String,
     // 쓸 수 있는 프로퍼티로, 코틀린은 비공개 필드, 공개 Getter, Setter 를 제공한다.
-    va isMarried: Boolean
+    var isMarried: Boolean
 )
 ```
 
