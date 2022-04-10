@@ -404,7 +404,7 @@ if (a instanceof Dog){
 대신 캐스팅을 수행해주기 때문이다. 이를 `스마트 캐스트(smart cast)`라고 한다.
 
 ```kotlin
-if (a instanceof Dog){  
+if (a is Dog){  
    a.name
    ...
 }  
