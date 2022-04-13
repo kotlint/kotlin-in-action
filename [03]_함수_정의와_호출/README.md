@@ -62,6 +62,13 @@ var operationCount = 0
 fun String.lastChar(): Char = this.get(this.length - 1)
 ```
 
+자바에서 확장 함수를 호출하는 방법은 아래와 같다.
+
+```java
+// KotlinFileName.ExtensionFunction
+char c = StringUtilsKt.lastChar("Java")
+```
+
 ### receiver
 
 > 수신 객체라는 말은 생소할 것이다. 자바언어를 사용하면서 개발을 할 때에도 들어보지 못했다. 하지만 어려운 개념은 아니다.
@@ -71,6 +78,35 @@ someObject.someFunction()
 ```
 
 someObject 가 바로 `receiver` 다.
+
+### 임포트
+
+확장 함수를 사용하기 위해서는 똑같이 Import 를 해야 한다.
+
+- import 패키지명.확장 함수명
+- import 패키지명.와일드카드
+
+## 확장 함수로 유틸리티 함수 정의
+
+> 확장 함수는 클래스 밖에 선언되기 때문에 오버라이드를 할 수 없다.
+
+```kotlin
+@JvmOverloads
+fun <T> Collection<T>.joinToString(
+    separator: String = ", ",
+    prefix: String = "",
+    postfix: String = ""
+): String {
+    val result = StringBuilder(prefix)
+    // this 는 T 타입의 수신객체
+    for ((index, element) in this.withIndex()) {
+        if (index > 0) result.append(separator)
+        result.append(element)
+    }
+    result.append(postfix)
+    return result.toString()
+}
+```
 
 ## References
 
