@@ -108,6 +108,111 @@ fun <T> Collection<T>.joinToString(
 }
 ```
 
+## 가변인자
+
+매개변수의 개수가 달라질 가능성이 있으면서, 매개변수의 개수와 상관없이 내부 로직을 동일하게 가져가야하는 경우에는 `vararg` 키워드를 사용해서 함수를 만들 수 있다.
+
+```kotlin
+/**
+ * Returns a new read-only list of given elements.  The returned list is serializable (JVM).
+ * @sample samples.collections.Collections.Lists.readOnlyList
+ */
+public fun <T> listOf(vararg elements: T): List<T> = if (elements.size > 0) elements.asList() else emptyList()
+```
+
+사용은 아래와 같다.
+
+```kotlin
+var list = listOf(1, 2, 3)
+```
+
+## 스프레드 연산자
+
+`*` 키워드를 spread 연산자라고 한다.
+
+```kotlin
+fun printList(args: Array<String>) {
+    val list = listOf("args : ", *args)
+    println(list)
+}
+```
+
+## 중위 호출(infix call)
+
+중위 호출은 receiver 와 유일한 메서드 인자 사이에 메서드 이름을 넣는다. 이때 메서드 이름과 인자 사이에는 공백이 들어가야 한다.
+
+```kotlin
+// 일반적인 방식
+1.to("one")
+// 중위 호출 방식
+1 to "one"
+```
+
+- __중위 호출을 사용할 수 있는 경우__
+  - 인자가 하나뿐인 메서드
+  - 인자가 하나뿐인 확장 함수
+- __함수를 중위 호출을 사용할 수 있도록 허용하기 위한 방법__
+  - `infix` 변경자를 함수 앞에 추가
+  - ```kotlin
+    // Pair 를 반환하는 to 함수
+    infix fun Any.to(other: Any) = Pair(this, other)
+    ```
+    
+## 구조 분해 선언
+
+구조 분해 선언(destructuring declaration)은 자바스크립트에서 자주 사용되는 기능이다.
+
+```kotlin
+val (number, name) = 1 to "one"
+```
+
+```kotlin
+fun test() {
+    val collection = listOf("A", "B", "C")
+    for ((index, element) in collection.withIndex()) {
+        println("$index: $element")
+    }
+}
+```
+
+위 코드를 디컴파일해보자.
+
+```kotlin
+@Metadata(
+   mv = {1, 5, 1},
+   k = 2,
+   d1 = {"\u0000\b\n\u0000\n\u0002\u0010\u0002\n\u0000\u001a\u0006\u0010\u0000\u001a\u00020\u0001¨\u0006\u0002"},
+   d2 = {"test", "", "src.main"}
+)
+public final class DestructuringKt {
+   public static final void test() {
+      List collection = CollectionsKt.listOf(new String[]{"A", "B", "C"});
+      int index = 0;
+
+      for(Iterator var3 = ((Iterable)collection).iterator(); var3.hasNext(); ++index) {
+         String element = (String)var3.next();
+         String var4 = index + ": " + element;
+         System.out.println(var4);
+      }
+   }
+}
+```
+
+### 객체 구조 분해 선언
+
+```kotlin
+val (name, age) = person
+```
+
+위 코드를 디컴파일하면 아래와 같은 모습이다.
+
+```kotlin
+val name = person.component1()
+val age = person.component2()
+```
+
+> The component1() and component2() functions are another example of the principle of conventions widely used in Kotlin (see operators like + and *, for-loops as an example). The componentN() functions need to be marked with the operator keyword to allow using them in a destructuring declaration.
+
 ## References
 
 - https://stackoverflow.com/questions/45875491/what-is-a-receiver-in-kotlin
