@@ -213,6 +213,60 @@ val age = person.component2()
 
 > The component1() and component2() functions are another example of the principle of conventions widely used in Kotlin (see operators like + and *, for-loops as an example). The componentN() functions need to be marked with the operator keyword to allow using them in a destructuring declaration.
 
+## 확장 함수와 로컬 함수
+
+```kotlin
+class User(val id: Int, val name: String, val address: String) {
+    fun User.validateBeforeSave() { // 확장 함수
+        fun validate(value: String, fieldName: String) { // 로컬 함수
+            if (value.isEmpty()) {
+                throw IllegalArgumentException()
+            }
+        }
+        validate(name, "Name")
+        validate(address, "Address")
+    }
+    
+    fun saveUser(user: User) {
+        user.validateBeforeSave()
+    }
+}
+```
+
+위 코드에서 validateBefore 라는 확장 함수를 만들고 그 안에, 저장하기 전에 필요한 검증 로직을 해야하는 로컬 함수들을 여러개 만든다고 해보자.
+
+> 개인적으로는 과연 Best Practice 일까 의문이 든다.
+
+응집력이 있는 것은 좋지만, 함수의 깊이가 너무 깊어질 가능성이 있고 가독성 측면에서 좋지 않을 수 있다.
+
+> 소트웍스 앤솔러지 객체지향 생활 체조에서는 `한 메서드에 오직 한 단계의 들여쓰기만 한다` 라는 규칙을 소개하고 있다. 
+
+확장 함수를 만들고 그 안에 로컬 함수를 만들어서 응집력을 높이는 것보다는, 다른 방법을 사용해서 응집력을 높이고 가독성도 높이는게 좋지 않을까 생각한다.
+
+### Refactoring
+
+> 위 코드를 내가 생각한 Best Practice 방식으로 리팩토링하면 아래와 같다.
+
+```kotlin
+class User(val id: Int, private val name: String, private val address: String) {
+    fun save(user: User) {
+        validateBeforeSave(user)
+        // do save
+    }
+
+    private fun validateBeforeSave(user: User) {
+        checkNotNullParameter(user.name, "Name")
+        checkNotNullParameter(user.address, "Address")
+        // do something else
+    }
+}
+
+// 다른 클래스에서도 공통으로 쓰일만한 함수는 유틸리티성으로 관리하는게 좋다
+fun checkNotNullParameter(value: String, fieldName: String) {
+    if (value.isEmpty()) throw IllegalArgumentException()
+}
+```
+
 ## References
 
 - https://stackoverflow.com/questions/45875491/what-is-a-receiver-in-kotlin
