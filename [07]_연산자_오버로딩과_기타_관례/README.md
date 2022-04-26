@@ -99,3 +99,47 @@ operator fun MutablePoint.get(index : Int) : Int{
 
 위 코드에서 get과 set을 모두 구현해 주어야 배열 형식으로 사용 할 수 있다.
 (set만 구현하고 get은 구현안하면 point[0]를 읽어 올 수 없음 : Unresolved reference )
+
+### 7.3.2 in 관례
+
+컬렉션에서 in은 객체가 컬렉션에 들어있는지 검사한다.
+in 연산자와 대응하는 함수는 contains이다. a in c ---> a.contains(c)
+
+```
+//7.11 in 관례 구현하기
+data class Point(val x : Int, val y : Int)
+
+data class Rectangle(val upperLeft : Point, val lowerRight : Point)
+
+operator fun Rectangle.contains(p : Point) : Boolean {
+    return p.x in upperLeft.x until lowerRight.x && p.y in upperLeft.y until lowerRight.y
+}
+
+fun main() {
+	val rect = Rectangle(Point(10, 20), Point(50, 50))
+    println(Point(30, 40) in rect)
+    println(Point(0, 0) in rect)
+}
+```
+
+###7.3.3 rangeTo 관례
+
+범위를 만드려면 .. 구문을 사용하면 된다. ..연산자는 rangeTo를 간략하게 표현하는 방법이다.
+start..end --> start.rangeTo(end)
+코틀린 표준 라이브러리에는 모든 Comparable 객체에 대해 적용 가능한 rangeTo 함수가 들어 있다.
+
+```
+//ex)
+
+public operator fun Int.rangeTo(n : Int) : IntRange{
+        println(n)
+        return 1..10
+    }
+
+fun main() {
+	1.rangeTo(10)
+	(1..10).forEach{println(it)}
+}
+
+
+```
