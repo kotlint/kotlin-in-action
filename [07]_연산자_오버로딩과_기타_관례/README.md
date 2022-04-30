@@ -122,7 +122,7 @@ fun main() {
 }
 ```
 
-###7.3.3 rangeTo 관례
+### 7.3.3 rangeTo 관례
 
 범위를 만드려면 .. 구문을 사용하면 된다. ..연산자는 rangeTo를 간략하게 표현하는 방법이다.
 start..end --> start.rangeTo(end)
@@ -141,5 +141,88 @@ fun main() {
 	(1..10).forEach{println(it)}
 }
 
+
+```
+
+### 7.3.4 for 루프를 위한 iterator 관례
+
+코틀린은 iterator 메서드를 확장 함수로 정의 할 수 있다. ex) CharSequence에 대한 iterator 확장 함수
+
+```
+//7.13 날짜 범위에 대한 이터레이터 구현하기
+import java.time.LocalDate
+
+operator fun ClosedRange<LocalDate>.iterator() : Iterator<LocalDate> =
+    object : Iterator<LocalDate>{
+        var current = start
+        override fun hasNext() = current <= endInclusive
+        override fun next() = current.apply{
+            current=plusDays(2)
+        }
+    }
+
+fun main() {
+	val newYear = LocalDate.ofYearDay(2017,1)
+    val daysOff = newYear.minusDays(10)..newYear
+    for (dayOff in daysOff) {println(dayOff)}
+
+}
+```
+
+## 7.4 구조 분해 선언과 component 함수
+
+구조 분해 : 복합적인 값을 분해 하여 여러 다른 변수를 초기화 할 수 있는 방법
+
+```
+val p = Point(10, 20)
+val (x, y) = p
+
+println(x)
+println(y)
+```
+
+```
+val (a, b) = p ---> val a = p.component(), val b = p.component()
+```
+
+data class의 주 생성자(constructor)에 들어있는 프로퍼티에 대해서는 컴파일러가 자동으로 component'N' 함수를 만들어줌
+data 타입이 아닌 클래스에서는 component'N'을 만들어 주어야 함
+
+```
+
+class Point(val x : Int, val y : Int){
+    operator fun component1() = y
+    operator fun component2() = x
+}
+
+fun main(){
+val p = Point(10, 20)
+val (x, y) = p
+
+println(x)
+println(y)
+}
+
+```
+
+```
+\\ 7.14 구조 분해 선언을 사용해 여러 값 반환하기
+
+data class NameComponents1(val name : String, val extension : String)
+class NameComponents2(val name : String, val extension : String)
+
+fun main(){
+
+    val comp1 = NameComponents1("박태민", "txt")
+    val (name1, ext1) = comp1
+    println(name1)
+    println(ext1)
+
+    val comp2 = NameComponents2("박태민", "txt")
+//     val (name2, ext2) = comp2
+//     println(name2) 				error! because it is not included Destructuring declation in general Class type...
+//     println(ext2)
+
+}
 
 ```
