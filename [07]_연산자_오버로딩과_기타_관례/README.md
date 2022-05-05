@@ -24,7 +24,7 @@ ex). "a" + "b" = "ab"
 
 더하기(+) 오버로딩 구현하기
 
-```
+```kotlin
 // 7.1 plus 연산자 구현하기
 data class Point(val x : Int, val y : Int){
     operator fun plus(other : Point) : Point {
@@ -52,7 +52,7 @@ a % b ---> a.mod(b)
 a + b ---> a.plus(b)
 a - b ---> a.minus(b)
 
-```
+```kotlin
 operator fun Point.minus(other : Point) : Point{
     return Point(x - other.x, y - other.y)
 }
@@ -67,7 +67,7 @@ fun main(){
 }
 ```
 
-```
+```kotlin
 data class Point(val x : Int, val y : Int){
     operator fun plus(other: Point) : Point{
         return Point(x + other.x, y + other.y)
@@ -83,7 +83,7 @@ data class Point(val x : Int, val y : Int){
 
 연산자를 정의 할 때 두 피연산자가 같은 타입일 필요는 없음.
 
-```
+```kotlin
 // 7.3 두 피연산자의 타입이 다른 연산자 정의하기
 
 operator fun Point.times(scale : Double) : Point{
@@ -101,14 +101,14 @@ fun main(){
 
 코틀린 연산자가 자동으로 교환법칙을 지원하지는 않음 (즉 오버라이딩을 해야 함)
 
-```
+```kotlin
 operator fun Int.times(p : Point) : Point{
     return Point((this * p.x).toInt(), (this * p.y).toInt())
 }
 
 ```
 
-```
+```kotlin
 //7.4 결과 타입이 피연산자 타입과 다른 연산자 정의하기
 operator fun Char.times(count : Int) : String{
     return toString().repeat(count)
@@ -125,7 +125,7 @@ fun main() {
 
 ### 7.3.1 인덱스로 원소에 접근 : get과 set
 
-```
+```kotlin
 mutableMap[key] = newValue
 ```
 
@@ -135,7 +135,7 @@ x[a] ---> x.get(a)
 인덱스 연산자를 사용해 원소를 쓰는 연산은 set 연산자 메서드로 변환됨
 x[b] = c ---> x.set(b, c)
 
-```
+```kotlin
 //7.9 get 관례 구현하기
 
 fun main() {
@@ -159,7 +159,7 @@ operator fun Point.get(index: Int) : Int{
 
 인덱스에 해당하는 컬렉션 원소를 쓰고 싶을 때는 set이라는 이름의 함수를 정의하면 됨.
 
-```
+```kotlin
 
 //7.10 관례를 따르는 set 구현하기
 
@@ -200,7 +200,7 @@ operator fun MutablePoint.get(index : Int) : Int{
 컬렉션에서 in은 객체가 컬렉션에 들어있는지 검사한다.
 in 연산자와 대응하는 함수는 contains이다. a in c ---> a.contains(c)
 
-```
+```kotlin
 //7.11 in 관례 구현하기
 data class Point(val x : Int, val y : Int)
 
@@ -223,7 +223,7 @@ fun main() {
 start..end --> start.rangeTo(end)
 코틀린 표준 라이브러리에는 모든 Comparable 객체에 대해 적용 가능한 rangeTo 함수가 들어 있다.
 
-```
+```kotlin
 //ex)
 
 public operator fun Int.rangeTo(n : Int) : IntRange{
@@ -243,7 +243,7 @@ fun main() {
 
 코틀린은 iterator 메서드를 확장 함수로 정의 할 수 있다. ex) CharSequence에 대한 iterator 확장 함수
 
-```
+```kotlin
 //7.13 날짜 범위에 대한 이터레이터 구현하기
 import java.time.LocalDate
 
@@ -268,7 +268,7 @@ fun main() {
 
 구조 분해 : 복합적인 값을 분해 하여 여러 다른 변수를 초기화 할 수 있는 방법
 
-```
+```kotlin
 val p = Point(10, 20)
 val (x, y) = p
 
@@ -276,14 +276,14 @@ println(x)
 println(y)
 ```
 
-```
+```kotlin
 val (a, b) = p ---> val a = p.component(), val b = p.component()
 ```
 
 data class의 주 생성자(constructor)에 들어있는 프로퍼티에 대해서는 컴파일러가 자동으로 component'N' 함수를 만들어줌
 data 타입이 아닌 클래스에서는 component'N'을 만들어 주어야 함
 
-```
+```kotlin
 
 class Point(val x : Int, val y : Int){
     operator fun component1() = y
@@ -300,7 +300,7 @@ println(y)
 
 ```
 
-```
+```kotlin
 \\ 7.14 구조 분해 선언을 사용해 여러 값 반환하기
 
 data class NameComponents1(val name : String, val extension : String)
@@ -324,7 +324,7 @@ fun main(){
 
 컬렉션에 대해서도 구조 분해를 사용 할 수 있다. 컬렉션이란 연관있는 자료들을 모아놓은 자료구조이다.
 
-```
+```kotlin
 //7.16 컬렉션에 대해 구조 분해 선언 사용하기
 data class NameComponents(
     val name : String,
@@ -349,7 +349,7 @@ fun main(){
 코틀린 표준 라이브러리에는 맨 앞의 다섯 원소에 대한 componentN을 제공함.
 즉, data class에서 default로 val (a, b, c, d, e, f) = g가 불가능. 오버라이딩으로는 가능한지 테스트해보자
 
-```
+```kotlin
 class Seven(val one : Int,
                  val two : Int,
                  val three : Int,
@@ -385,7 +385,7 @@ fun main(){
 변수 선언이 들어갈 수 있는 장소라면 어디든 구조 분해 선언을 사용 할 수 있음
 (맵의 원소에 대한 이터레이션)
 
-```
+```kotlin
 // 7.16 구조 분해 선언을 사용해 맵 이터레이션 하기
 fun printEntries(map : Map<String, String>){
     for((key, value) in map)
@@ -414,7 +414,7 @@ fun main(){
 
 ### 7.5.1 위임 프로퍼티 소개
 
-```
+```kotlin
 class Foo{
     var p : Type by Delegate()
 }
