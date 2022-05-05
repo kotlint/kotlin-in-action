@@ -78,3 +78,67 @@ fun ignoreNulls(s: String?) {
 ### 널 아님 단언이 더 나은 해법인 경우
 
 어떤 함수가 값이 널인지 검사한 다음에 다른 함수를 호출한닫고 해도 컴파일러는 호출된 함수 안에서 안전하게 그 값을 사용할 수 있음을 인식할 수 없다.
+
+## let
+
+let 은 자신의 수신 객체를 인자로 받아서 사용한다. 안전한 호출 연산자랑 같이 사용하면 널이 될 수 있는 식을 더 쉽게 다룰 수 있다.
+
+```kotlin
+// if (email != null) sendEmailTo(email)
+email?.let { sendEmailTo(it) }
+```
+
+> 만약에 여러 값이 null 인지 검사해야 하는 경우, let 을 중첩해서 처리하는 방식보다, if 문을 사용하는 편이 더 나을 수 있다.
+
+## lateinit
+
+lateinit 은 이름에서 알 수 있듯이 지연 초기화를 위해 사용되는 키워드다. 
+
+그럼 언제 사용할까?
+
+JUnit 에서는 @Before 메서드 안에서 초기화 로직을 수행해야만 한다. 하지만 코틀린에서는 일반적으로 생성자에서 모든 프로퍼티 값을 초기화 한다. 게다가 프로퍼티 타입이 널이 될 수 없는 타입이라면 반드시 널이 아닌 값으로 그 프로퍼티를 초기화해야 한다.
+
+```kotlin
+class Test {
+  private lateinit var service: MyService
+  
+  @Before
+  fun setUp() { 
+    service = MyService()
+  }
+
+}
+```
+
+lateinit property 는 항상 var 이어야 한다. val property 는 항상 final 필드로 컴파일 되며, 생성자 안에서 초기화 해야 한다. 그래서 @Service 어노테이션이 적용된 클래스에서 DI 를 하기 위해서는 아래와 같이 사용한다.
+
+```kotlin
+@Service
+class OrderService(
+    private val orderCommandService: OrderCommandService,
+    private val orderQueryService: OrderQueryService,
+) {
+ ...
+}
+```
+
+위 코드에 @Autowired 어노테이션이 필요하지 않은 이유는 무엇일까?
+ 
+스프링 의존성 주입의 특징 중 한가지는 다음과 같다.
+
+__어떠한 빈에 생성자가 오직 하나만 있고, 생성자의 파라미터 타입이 빈으로 등록 가능한 존재라면 이 빈은 @Autowired 어노테이션 없이도 의존성 주입이 가능하다.__
+
+그래서 자바에서는 보통 롬복에서 제공하는 @RequriedArgsConstructor 어노테이션과 같이 사용한다.
+
+```java
+@RequriedArgsConstructor
+@Service
+public class OrderService {
+  private final OrderCommandService orderCommandService;  
+  private final OrderQueryService orderQueryService;
+}
+```
+
+## References
+
+- https://tourspace.tistory.com/208
