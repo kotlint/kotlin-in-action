@@ -12,9 +12,60 @@
 
 Overloading : 파라미터의 타입, 갯수와 상관 없이 어떤 파라미터를 받아도 유사한 기능을 수행하도록 함수를 구현한 것.
 
-Convention : 어떤 언어 기능과 미리 정해진 이름의 함수를 연결해주는 기법
+Convention : 어떤 언어 기능과 미리 정해진 이름의 함수를 연결해주는(또다른 문법적 약속) 기법
 
-### 7.1 산술 연산자 오버로딩
+## 7.1 산술 연산자 오버로딩
+
+코틀린에서 관례를 사용하는 가장 단순한 예는 산술 연산자임.
+자바에서는 원시 타입에 대해서만 산술 연산자를 사용할 수 있고, 추가로 String에 대해 + 연산자를 사용할 수 있음.
+ex). "a" + "b" = "ab"
+
+### 7.1.1 이항 산술 연산 오버로딩
+
+더하기(+) 오버로딩 구현하기
+
+```
+// 7.1 plus 연산자 구현하기
+data class Point(val x : Int, val y : Int){
+    operator fun plus(other : Point) : Point {
+        return Point( x + other.x, y + other.y)
+    }
+}
+
+fun main(){
+    val p1 = Point(10, 20)
+    val p2 = Point(30, 40)
+
+    val p3 = p1 + p2 // a + b --> a.plus(b)
+    println(p3)
+}
+
+```
+
+관례 + 를 사용하려면 plus 앞에 연산자 오버로딩을 한다는 의미인 operator가 붙어야 함
+
+[오버로딩 가능한 이항 산술 연산자]
+
+a \* b ---> a.times(b)
+a / b ---> a.div(b)
+a % b ---> a.mod(b)
+a + b ---> a.plus(b)
+a - b ---> a.minus(b)
+
+```
+operator fun Point.minus(other : Point) : Point{
+    return Point(x - other.x, y - other.y)
+}
+
+fun main(){
+    val p1 = Point(10, 20)
+    val p2 = Point(30, 40)
+
+    val p3 = p1 - p2
+
+    println(p3)
+}
+```
 
 ```
 data class Point(val x : Int, val y : Int){
@@ -27,6 +78,50 @@ data class Point(val x : Int, val y : Int){
 
 연산자를 오버로딩 하는 함수 앞에는 반드시 operator가 있어야 함
 코틀린에서는 프로그래머가 직접 연산자를 만들어 사용할 수 없고 언어에서 미리 정해둔 연산자만 오버로딩 할 수 있다
+
+직접 오버라이딩을 해도 우선순위는 표준 숫자 타입과 같음
+
+연산자를 정의 할 때 두 피연산자가 같은 타입일 필요는 없음.
+
+```
+// 7.3 두 피연산자의 타입이 다른 연산자 정의하기
+
+operator fun Point.times(scale : Double) : Point{
+    return Point((x * scale).toInt(), (y * scale).toInt())
+}
+
+fun main(){
+    val p1 = Point(10, 20)
+   	p1 * 3.0
+
+    println(p1)
+}
+
+```
+
+코틀린 연산자가 자동으로 교환법칙을 지원하지는 않음 (즉 오버라이딩을 해야 함)
+
+```
+operator fun Int.times(p : Point) : Point{
+    return Point((this * p.x).toInt(), (this * p.y).toInt())
+}
+
+```
+
+```
+//7.4 결과 타입이 피연산자 타입과 다른 연산자 정의하기
+operator fun Char.times(count : Int) : String{
+    return toString().repeat(count)
+}
+
+fun main() {
+	println('a'*5) // input : Char , output : String
+}
+
+```
+
+일반 함수와 마찬가지로 operator 함수도 오버로딩이 가능함 ex) plus(a, b), plus(a, b, c)
+따라서 이름은 같지만 파라미터 타입이 서로 다른 연산자 함수를 만들 수 있음
 
 ### 7.3.1 인덱스로 원소에 접근 : get과 set
 
@@ -226,3 +321,103 @@ fun main(){
 }
 
 ```
+
+컬렉션에 대해서도 구조 분해를 사용 할 수 있다. 컬렉션이란 연관있는 자료들을 모아놓은 자료구조이다.
+
+```
+//7.16 컬렉션에 대해 구조 분해 선언 사용하기
+data class NameComponents(
+    val name : String,
+    val extension : String){
+
+    fun splitFilename(fullName : String) : NameComponents{
+        val (name, extension) = fullName.split('.',  limit=2)//split collection
+        return NameComponents(name, extension)
+    }
+
+}
+
+fun main(){
+    val k = NameComponents("kfc","먹고싶다")
+    val c = k.splitFilename("hello.kt")
+    println(c.name)
+    println(c.extension)
+}
+
+```
+
+코틀린 표준 라이브러리에는 맨 앞의 다섯 원소에 대한 componentN을 제공함.
+즉, data class에서 default로 val (a, b, c, d, e, f) = g가 불가능. 오버라이딩으로는 가능한지 테스트해보자
+
+```
+class Seven(val one : Int,
+                 val two : Int,
+                 val three : Int,
+                 val four : Int,
+                 val five : Int,
+                 val six : Int,
+                 val seven : Int){
+    operator fun component1() = one
+    operator fun component2() = two
+    operator fun component3() = three
+    operator fun component4() = four
+    operator fun component5() = five
+    operator fun component6() = six
+    operator fun component7() = seven
+}
+
+fun main(){
+	val sevens = Seven(1, 2, 3, 4, 5, 6, 7)
+    val (a, b, c, d, e, f, g) = sevens
+    println(a)
+    println(b)
+    println(c)
+    println(d)
+    println(e)
+    println(f)
+    println(g)
+}
+//it works! but data class type not possible...
+```
+
+### 7.4.1 구조 분해 선언과 루프
+
+변수 선언이 들어갈 수 있는 장소라면 어디든 구조 분해 선언을 사용 할 수 있음
+(맵의 원소에 대한 이터레이션)
+
+```
+// 7.16 구조 분해 선언을 사용해 맵 이터레이션 하기
+fun printEntries(map : Map<String, String>){
+    for((key, value) in map)
+    {
+        println("$key->$value")
+    }
+}
+
+fun main(){
+	val map = mapOf("Oracle" to "Java", "JetBrains" to "Kotlin")
+    printEntries(map)
+}
+
+```
+
+위 예제에서 두가지 관례를 확인 할 수 있음. 1. 객체 이터레이션(in)/ 2. 구조 분해 선언( val (a, b) = c)
+
+## 7.5 프로퍼티 접근자 로직 재활용 : 위임 프로퍼티
+
+위임 프로퍼티(Delegated Property) : 코틀린의 강력한 관례 중 하나
+위임 프로퍼티를 사용하면 값을 뒷받침하는 필드에 단순히 저장하는 것 보다 더 복잡한 방식으로 작동하는 프로퍼티를
+쉽게 구현 할 수 있음
+
+위임이란? : 객체가 직접 작업을 수행하지 않고 다른 도우미 객체가 그 작업을 처리하게 맡기는 디자인 패턴을 말함
+위임객체(delegate) : 작업을 처리하는 도우미 객체
+
+### 7.5.1 위임 프로퍼티 소개
+
+```
+class Foo{
+    var p : Type by Delegate()
+}
+```
+
+p 프로퍼티는 접근자 로직을 다른 객체에게 위임
