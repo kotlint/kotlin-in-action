@@ -289,6 +289,152 @@ We're 100% done!
 
 마찬가지로 자바의 원시 타입은 Not null 이기 때문에 코틀린에서 사용할 때도 널이 될 수 없는 타입으로 취급된다.
 
+## 널이 될 수 있는 원시 타입
+
+널이 될 수 있는 코틀린 타입은 자바의 래퍼 타입으로 컴파일 된다. 그 이유는 자바에서는 원시 타입에 null 을 저장할 수 없기 때문이다.
+
+> JVM 에서 제네릭을 구현하는 방법
+>
+> JVM 은 타입 인자로 원시 타입을 허용하지 않는다. 따라서 자바나 코틀린 모두에서 제네릭 클래스는 항상 박스 타입을 사용해야 한다. 원시 타입으로 이루어진 데이터를 저장하기 위해서는 서드파티 라이브러리나 배열을 사용해야 한다.
+
+## 숫자 변환
+
+코틀린은 한 타입의 숫자를 다른 타입의 숫자로 자동 변환 하지 않는다.
+
+```kotlin
+val i = 1
+val l: Long = i // ERROR: Type mismatch
+```
+
+아래 처럼 변환 메서드를 호출해야 한다.
+
+```kotlin
+val i = 1
+val l: Long = i.toLong()
+```
+
+코틀린에서 다른 타입의 숫자로 자동 변환(묵시적 변환)을 지원하지 않는 이유는 개발자의 혼란을 피하기 위해서이다. 예를 들어, 박스 타입을 비교하는 경우에는 값이 아닌 객체를 비교해야 하기 때문이다. 
+
+> 자바에서 new Integer(42).equals(new Long(42)) 는 false 이다.
+
+## Any, Any?: 최상위 타입
+
+자바에서는 Object 가 최상위 타입이며, 코틀린에서는 Any 가 최상위 타입이다.
+
+![kotlin-type-hierarchy](https://user-images.githubusercontent.com/47518272/167121763-fdd8496f-58f9-4729-8ccf-d1e65695f5bc.png)
+
+하지만 자바에서는 참조 타입만 Object 를 Super class 로 가지며, 원시 타입은 포함되지 않는다. 자바와 마찬가지로 코틀린에서도 원시 타입을 Any 타입의 변수에 대입하면 자동으로 값을 객체로 감싼다.
+
+```kotlin
+val answer: Any = 42
+```
+
+## Unit 타입: 코틀린의 void
+
+자바의 void 는 코틀린의 Unit 에 해당된다. 즉, 아무것도 반환하지 않는 다라는 것을 명시해 준다. 
+
+코틀린에 함수의 반환 타입이 Unit 이고 그 함수가 제네릭 함수를 오버라이드하지 않는다면 그 함수는 내부에서 자바 void 함수로 컴파일된다.
+
+- __Unit vs void__
+  - Unit 은 모든 기능을 갖는 일반적인 타입이며 void 와 달리 인자로 쓸 수 있다.
+  - Unit 에 속한 값은 단 하나뿐이며, 그 이름도 Unit 이다.
+  - 코틀린에서 Unit 이라는 이름을 선택한 이유는 함수형 프로그래밍에서 전통적으로 Unit 은 `단 하나의 인스턴스만 갖는 타입`을 의미해왔고, 그 유일한 인스턴스의 유무가 자바 void 와의 가장 큰 차이다.
+
+Unit 의 가장 큰 이점 중 하나는 제네릭 파라미터를 반환하는 함수를 오버라이드하면서 반환 타입으로 Unit 을 쓸 때 유용하다.
+
+```kotlin
+interface Processor<T> {
+  fun process(): T
+}
+```
+
+```kotlin
+class NoResultProcessor: Processor<Unit> {
+  override fun process() { // Unit 을 반환하지만 타입을 명시할 필요가 없다. 컴파일러가 묵시적으로 return Unit 을 넣어준다.
+    // return 문을 생략해도 된다.
+  }
+}
+```
+
+## Nothing: 이 함수는 결코 정상적으로 끝나지 않는다.
+
+코틀린에서는 결코 성공적으로 값을 돌려주는 일이 없으므로 "반환 값"이라는 개념 자체가 의미 없는 함수가 일부 존재한다. 
+
+```kotlin
+fun fail(message: String): Nothing }
+  throw IllegalStateException(message)
+}
+```
+
+Nothing 을 반환하는 함수를 엘비스 연산자의 우항에 사용해 전제 조건(precondition)을 검사할 수 있다.
+
+```kotlin
+val address = company.address ?: fail("No Address")
+```
+
+__컴파일러는 Nothing 을 반환하는 함수가 결코 정상 종료되지 않음을 알고 그 함수를 호출하는 코드를 분석할 때 사용한다.__
+
+# 컬렉션과 배열
+
+컬렉션을 만들 때, 널이 될 수 있게 만들어야 하는 경우 조심 해야 할 사항이 있다.
+
+- 널이 될 수 있는게 원소인가? = `List<Int?>`
+  - 이 경우에 컬렉션은 항상 null 이 아니다.
+- 널이 될 수 있는게 컬렉션인가? = `List<Int>?`
+- 둘 다 인가? = `List<Int?>?`
+  - 이런 리스트를 처리해야 할 때는 변수에 대해 널 검사를 수행한 다음에 그 리스트에 속한 모든 원소에 대해 다시 널 검사를 수행해야 한다.
+
+```kotlin
+/** 널이 될 수 있는 값으로 이루어진 컬렉션 다루기 */
+fun addValidNumbers(numbers: List<Int?>) {
+  var sumOfValidNumbers = 0
+  var invalidNumbers = 0
+  
+  for (number in numbers) {
+    if (number != null) {
+      sumOfValidNumbers += number
+    } else {
+      invalidNumbers++
+    }
+  }
+}
+```
+
+```kotlin
+/** filterNotNull 을 사용하여 널이 될 수 있는 값으로 이뤄진 컬렉션 사용하기 */
+val validNumbers = numbers.filterNotNull()
+```
+
+## 읽기 전용과 변경 가능한 컬렉션
+
+![kotlin-collection-hierarchy](https://user-images.githubusercontent.com/47518272/167125169-2b7978c6-e259-4684-a41d-ca9500b2e087.png)
+
+자바의 ArrayList 와 HashSet 은 MutableList 와 MutableSet 을 확장하므로, 코틀린과 자바 사이를 오갈 때 아무 변환도 필요 없다. 즉, 코틀린 컬렉션은 표준 자바 컬렉션 클래스를 사용한다. 단지 읽기 전용 컬렉션과 변경 가능한 컬렉션을 구별해 제공할 뿐이다.
+
+컬렉션의 데이터를 수정하려면 `kotlin.collections.MutableCollection` 인터페이스를 사용해야 한다. MutableCollection 은 kotlin.collections.Collection 을 확장하면서
+add, remove 와 같은 메서드를 추가로 제공한다.
+
+읽기 전용과 변경 가능한 컬렉션을 구분하는 이유는 val, var 과 같이 프로그램에서 데이터에 어떤 일이 벌어지는지를 더 쉽게 이해하기 위함이다. 
+
+> 코드에서 가능하면 항상 읽기 전용 인터페이스를 사용하는 것을 일반 규칙으로 삼는 것이 좋다.
+
+컬렉션 인터페이스를 사용할 때 항상 염두에 둬야 할 핵심은 읽기 전용 컬렉션이라고해서 꼭 변경 불가능한 컬렉션일 필요는 없다는 점이다.
+
+|컬렉션 타입|읽기 전용 타입|변경 가능 타입|
+|---|---|---|
+|List|listOf|mutableListOf, arrayListOf|
+|Set|setOf|mutableSetOf, hashSetOf, linkedSetOf, sortedSetOf|
+|Map|mapOf|mutableMapOf, hashMapOf, linkedMapOf, sortedMapOf|
+
+## Array
+
+- 코틀린의 Array 클래스는 자바의 배열로 컴파일된다.
+- 원시 타입 배열은 IntArray 와 같이 각 타입에 대한 특별한 배열로 표현된다.
+
+```kotlin
+val fiveZerosToo = intArrayOf(0, 0, 0, 0, 0)
+```
+
 ## References
 
 - https://tourspace.tistory.com/208
