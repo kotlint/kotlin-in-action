@@ -139,6 +139,156 @@ public class OrderService {
 }
 ```
 
+## 널이 될 수 있는 타입의 확장함수
+
+isEmpty(빈 문자열("") 검사) 나 isBlank(공백 검사) 처럼 널을 검사할 수 있으면 편리할 것이다.
+
+```kotlin
+fun String?.isNullOrBlank(): Boolean = this == null || this.isBlank() // 두 번째 this 에는 스마트 캐스트가 적용된다.
+```
+
+```kotlin
+fun verifyUserInput(input: String?) {
+  if (input.isNullOrBlank()) {
+    println("Please fill in the required fields")
+  }
+}
+```
+
+### 타입 파라미터의 널 가능성
+
+```kotlin
+fun <T> printHashCode(t: T) {
+  println(t?.hashCode())
+}
+```
+
+여기서 T 는 Any? 타입이기 때문에 null 이 될 수 있다. null 이 될 수 없는 타입으로 변경하려면 아래와 같이 하면 된다.
+
+```kotlin
+fun <T: Any> printHashCode(t: T) {
+  println(t.hashCode())
+}
+```
+
+## 널 가능성과 자바
+
+코틀린은 자바 상호운용성을 중요시한다. 자바에서는 타입에 대해 널 가능성을 지원하지 않는다. 
+
+자바에서는 어노테이션으로 널 가능성 정보를 표시해준다.
+
+```java
+public String print(@Nullable String s)
+```
+
+코틀린에서는 `String?` 처럼 표시된다.  
+
+- __(Java) @NotNull + Type = (Kotlin) Type__
+- __(Java) @Nullable + Type = (Kotlin) Type?__
+
+이런 널 가능성 어노테이션들이 소스코드에 없는 경우에는 자바의 타입은 코틀린의 플랫폼 타입이 된다.
+
+### 플랫폼 타입
+
+플랫폼 타입은 코틀린이 널 관련 정보를 알 수 없는 타입을 말한다. 따라서, 그 타입을 널이 될 수 있는 타입으로 처리해도되고 널이 될 수 없는 타입으로 처리해도 된다.
+
+- __(Java) Type = (Kotlin) Type or Type?__
+  - 자바 타입은 코틀린에서 플랫폼 타입으로 표현된다.
+  - 플랫폼 타입은 널이 될 수 있는 타입이나 널이 될 수 없는 타입 모두로 사용할 수 있다.
+  - 코틀린에서 플랫폼 타입을 선언할 수는 없다. 자바 코드에서 가져온 타입만 플랫폼 타입이 된다.
+ 
+> 코틀린이 왜 플랫폼 타입을 도입했을까?
+>
+> 모든 자바 타입을 널이 될 수 있는 타입으로 다루면 더 안전하지 않을까? 그래도 되지만, 모든 타입을 널이 될 수 있는 타입으로 다루면 결코 널이 될 수 없는 값에 대해서도 불필요한 널 검사가 들어간다.
+
+### 상속
+
+```java
+/** Java */
+interface StringProcessor {
+  void process(String value);
+}
+```
+
+코틀린 컴파일러는 다음과 같은 두 구현을 모두 받아들인다.
+
+```kotlin
+class StringPrinter: StringProcessor {
+  override fun process(value: String) {
+    println(value)
+  }
+}
+
+class StringPrinter: StringProcessor {
+  override fun process(value: String?) {
+    if (value != null) {
+      println(value)
+    }
+  }
+}
+```
+
+# 코틀린의 원시 타입
+
+코틀린은 원시 타입과 래퍼 타입을 구분하지 않는다.
+
+> 반면, 자바는 구분한다.
+
+## 원시 타입
+
+자바의 원시 타입에는 값이 들어가지만, 참조 타입(String 등)에는 메모리 상의 객체 위치가 들어간다. 참조 타입을 썼을 때의 장점은 원시 타입 값을 더 효율적으로 저장하고 여기저기 전달할 수 있다. 그리고 원시 타입을 객체로 Wrapping 함으로써, 특정 값이 갖는 역할에 대해서 정의할 수도 있다.
+
+아래는 지하철 요금과 관련된 fare 라는 원시 타입을 객체로 Wrapping 한 것이다. 따라서, fare 가 담당하는 역할을 정의하고 다양한 요금 정책에서 사용할 수 있다.
+
+```java
+public class Fare {
+
+    private int fare;
+    private static final int STANDARD_FARE = 1_250;
+
+    public static Fare standard() {
+        return new Fare(STANDARD_FARE);
+    }
+
+    private Fare(int fare) {
+        this.fare = fare;
+    }
+
+    public void add(int value) {
+        fare += value;
+    }
+
+    public void change(int value) {
+        fare = value;
+    }
+
+    public int getFare() {
+        return fare;
+    }
+}
+```
+
+> stack, heap 영역에 대해 잘 아는 것이 중요하다.
+
+코틀린은 원시 타입과 래퍼 타입을 구분하지 않고 항상 같은 타입을 사용한다. 또한 코틀린은 숫자 타입 등 원시 타입의 값에 대해 메서드를 호출 할 수 있다.
+
+```kotlin
+fun showProcess(progress: Int) {
+  val percent = progress.coerceIn(0, 100) // 값을 특정 범위로 제한
+  println("We're ${percent}% done!"}
+}
+
+>>> showProgress(146)
+We're 100% done!
+```
+
+코틀린에서 원시 타입과 래퍼 타입을 구분하지 않는다고 해서 항상 객체로 표현되는 것은 아니다. 
+
+실행 시점에 숫자 타입은 가능한 한 가장 효율적인 방식으로 표현된다. 대부분의 경우(변수, 프로퍼티, 파라미터, 반환 타입 등) 코틀린의 Int 타입은 자바 int 타입으로 컴파일된다.
+단, 컬렉션과 같은 제네릭 클래스를 사용하는 경우에는 이런 컴파일이 불가능하다. 예를 들어 Int 타입을 컬렉션의 타입 파라미터로 넘기면 자바의 Integer 로 변환된다.
+
+마찬가지로 자바의 원시 타입은 Not null 이기 때문에 코틀린에서 사용할 때도 널이 될 수 없는 타입으로 취급된다.
+
 ## References
 
 - https://tourspace.tistory.com/208
