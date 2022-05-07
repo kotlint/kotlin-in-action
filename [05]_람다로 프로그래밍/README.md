@@ -175,16 +175,18 @@ fun main() {
 ~~~
 
 ### 현재 영역에 있는 변수에 접근
+
 - 람다를 함수 안에서 정의하면, 함수의 파라미터 뿐 아니라 람다의 정의의 앞에 선언된 로컬 변수까지 람다에서 모두 사용할 수 있다.
 - forEach 는 컬렉션의 모든 원소에 대해 람다를 호출해 준다.
+
 ~~~kotlin
 // 함수 파라미터를 람다 안에서 사용하기.
-fun printMessagesWithPrefix (message : Collection<String>, prefix : String){
-    message.forEach{ // 각 원소에 대해 수행할 작업을 람다로 받는다.
+fun printMessagesWithPrefix(message: Collection<String>, prefix: String) {
+    message.forEach { // 각 원소에 대해 수행할 작업을 람다로 받는다.
         println("$prefix $it") // 람다 안에서 함수의 'prefix' 파라미터를 사용
     }
 }
-fun main(){
+fun main() {
     val error = listOf("403 Forbidden", "404 Not Found")
     printMessagesWithPrefix(error, "Error: ")
 }
@@ -194,21 +196,194 @@ fun main(){
 // Error: 404 Not Found
 ~~~
 
+- 람다 안에서 바깥함수 로켤변수 포획
+
+~~~kotlin
+fun printProblemCounts(responses: Collection<String>) {
+    var clientError = 0;
+    var serverError = 0;
+    responses.forEach {
+        if (it.startsWith("4")) {
+            clientError++
+        } else if (it.startsWith("5")) {
+            serverError++
+        }
+    }
+}
+~~~
+
 ### 멤버 참조
+
+- :: 를 사용하는 식을 멤버 참조라고 부른다.
+    - 멤버 참조는 프로퍼티나 메서드를 단 하나만 호출하는 함수 값을 만들어 준다.
+
+~~~kotlin
+val getAge = Person::age
+
+// 기존 형태
+val getAge = { person: Person -> person.age }
+~~~
+
+- Class 이름 생략하고 :: 참조 바로시작
+
+~~~kotlin
+// 기존
+val action = { person: Person, message: String ->
+    sendEmail(person, message)
+} // sendEmail() 에 파라미터를 람다식으로 넘김
+
+// 람대 대신 멤버 참조
+val nextAction = ::sendEnaul
+val mail = nextAction(Person, "message")
+println(mail)
+
+fun salute() = println("salute!");
+
+fun main() {
+    // 라이브러리 함수  
+    run(::salute)
+
+    // 출력 : "salute!
+}
+~~~
 
 ### 컬렉션 함수형 API
 
-### 필수적인 함수 : filter 와 map
+- #### 필수적인 함수 : filter 와 map
+    - filter 와 map 은 컬렉션을 활용하때 기반이 되는 함수이다.
+
+- filter() 함수는 컬렉션을 이터레이션하면서 주어진 람다에 각 원소를 넘겨서 함다가 true 를 반환하는 원소만 모은다.
+
+~~~kotlin
+val list = listOf(1, 2, 3, 4)
+println(list.filter { it % 2 == 0 })
+
+// 출력 " 2, 4
+~~~  
+
+- filter() 함수는 원치 않는 원소를 제거한다. 원도도 변환할 수 없다. 변환하려면 map() 함수를 써야한다.
+
+~~~kotlin
+val list = listOf(1, 2, 3, 4)
+println(list.map { it * it })
+// 결과 1, 4, 9, 16 원소를 변환했쥬? 
+~~~
+
+- 사람의 리스트가아니라 사람의 이름의 리스트를 출력하고싶다면? map!!
+
+~~~kotlin
+data class Person(val name: String, val age: Int)
+
+val people = listOf(Person("봉만식", 27), Person("국뽕만", 31))
+println(people.map { it.name })
+// 출력 봉만식, 국뽕만
+
+// 참조 응용 people.map { Person::name }
+println(people.filter { it.age > 30 }.map { Person::name })
+// 국뽕만
+~~~
 
 ### all, any, count, find : 컬렉션에 술어 적용
 
+~~~kotlin
+data class Person(val name: String, val age: Int)
+
+val canBeInClub27 = { p: Person -> p.age <= 27 }
+
+val people = listOf(Person("봉만식", 27), Person("국뽕만", 31))
+// 모든 원소가 조건에 맞는기 검사
+println(people.all(canBeInClub27))// 결과 false
+// 만족하는 원소가 하나라도 있나?
+println(people.any(canBeInClub27)) // true
+// 만족하는 원소의 개수를 구하려면
+println(people.count(canBeInClub27)) // 1
+// 원소 하나만 찾고싶은 경우
+println(people.find(canBeInClub27)) // Person(name=봉만식, age=27)
+~~~
+
 ### groupBy : 리스트를 여러 그룹으로 이뤄진 맵으로 변경
+
+- groupBy Type 는 특성을 파라미터로 전달하면 컬렉션이 자동으로 구분해준다.
+
+~~~kotlin
+data class Person(val name: String, val age: Int)
+
+val people = listOf(Person("봉만식", 27), Person("국뽕만", 31), Person("한석뽕", 31))
+
+println(people.groupBy { it.age })
+
+// { // 결과 (key 로 그룹 지워줌)
+// 27=[Person(name=봉만식, age=27)], 
+// 31=[Person(name=국뽕만, age=31), Person(name=한석뽕, age=31)]
+// }
+~~~
 
 ### flatMap 과 flatten : 중첨된 컬렉션 안의 원소 처리
 
+~~~kotlin
+class Book(val tile: String, val authors: List<String>)
+
+val books = listOf(
+    Book("숲속의 곰탱이", listOf("개미같은 니들")),
+    Book("바다의 지느러미", listOf("하늘과 바다", "해저속 니네집")),
+    Book("하늘의 기레기", listOf("하늘과 바다", "비행기타고 우리집"))
+)
+println(books.flatMap { it.authors }.toSet())
+// [개미같은 니들, 하늘과 바다, 해저속 니네집, 비행기타고 우리집]
+~~~
+
+- toSet()은 flatMap 의 결과 리스트에서 중복을 없애고 집합으로 만든다.
+
+- 리스트의 리스트가 있는데 모든 중첩된 리스트의 원소를 한 리스트로 모아야한다면 flatMap() 을 떠올리면 된다.
+- 특별히 변환해야 할 내용이 없다면 리스트의 리스트를 평평하게 펼치기만 하면 된다. 그런 경우 flatten() 을 사용하면 된다.
+
+~~~kotlin
+val numbers = listOf(listOf(1, 2, 3), listOf(5, 6, 7), listOf(8, 9, 0))
+val result = numbers.flatten()
+println(result)
+~~~
+
 ### 지연 계산(lazy) 컬렉션 연산
 
+- 위에서 설명한 map 이나 filter 같은 컬렉션은 결과 컬렉션을 즉시 생성한다.
+
+~~~kotlin
+data class Person(val name: String, val age: Int)
+
+val people = listOf(Person("봉만식", 27), Person("국뽕만", 31), Person("한석뽕", 31))
+
+// 즉시계산
+println(people.map(Person::name).filter { it.startsWith("한") })
+
+// 결과 
+// [한석뽕]
+~~~
+
+- filter 와 map 은 리스트를 **반환한다.** 이는 위 코드처의 연쇄 호출이 리스트를 2개 만든다는 뜻이다.
+    - 한 리스트는 filter 의 결과를 담고 다른 하나는 map 의 결과를 담는다. 원본리스트에 수백만개의 Data 가 들어있다면 효울이 많이 떨어진다.
+
+~~~kotlin
+data class Person(val name: String, val age: Int)
+
+val people = listOf(Person("봉만식", 27), Person("국뽕만", 31), Person("한석뽕", 31))
+
+// 지연계산
+people.asSequence() // 원본 컬렉션을 시퀀스로 변환
+    .map(Person::name)               // 시퀀스도 컬렉션과 똑같은 
+    .filter { it.startsWith("한") }   // API를 제공
+    .toList() // 결과 시퀀스를 가시 리스트로 변환
+~~~
+
+- asSequence() 는 컬렉션함수를 시퀀스로 변환해주는 함수이다.
+
+> - 처리할 Data 가 많을경우 시퀀스를 이용해라.
+>- 시퀀스로 처리하면 filter 와 map 처럼 연쇄 호출이 일어나지 않는다.
+   >
+- 시퀀스는 중간 처리결과를 저장하지 않고도 연산을 열쇄적으로 적용해서 효율적으로 계산을 수행한다.
+
 ### 시퀀스 연산 실행 : 중간 연산과 최종 연산
+
+- 시퀀스에 대한 연산은 중간연산과 최종연상으로 나뉜다.
 
 ### 시퀀스 만들기
 
