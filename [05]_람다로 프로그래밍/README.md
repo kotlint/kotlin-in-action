@@ -345,7 +345,8 @@ println(result)
 
 ### 지연 계산(lazy) 컬렉션 연산
 
-- 위에서 설명한 map 이나 filter 같은 컬렉션은 결과 컬렉션을 즉시 생성한다.
+- 즉시 계산
+    - 앞서 살펴본 map 이나 filter 같은 컬렉션은 결과 컬렉션을 즉시 생성한다.
 
 ~~~kotlin
 data class Person(val name: String, val age: Int)
@@ -359,8 +360,12 @@ println(people.map(Person::name).filter { it.startsWith("한") })
 // [한석뽕]
 ~~~
 
-- filter 와 map 은 리스트를 **반환한다.** 이는 위 코드처의 연쇄 호출이 리스트를 2개 만든다는 뜻이다.
+- filter 와 map 은 리스트를 **반환한다.** 위 프린터문에서 연쇄 호출이 리스트를 2개 만든다는 뜻이다.
     - 한 리스트는 filter 의 결과를 담고 다른 하나는 map 의 결과를 담는다. 원본리스트에 수백만개의 Data 가 들어있다면 효울이 많이 떨어진다.
+
+
+- 지연계산
+    - 시퀀스를 통해 중간 임시 컬렉션없이 컬렉션 연산을 수행한다.
 
 ~~~kotlin
 data class Person(val name: String, val age: Int)
@@ -368,31 +373,111 @@ data class Person(val name: String, val age: Int)
 val people = listOf(Person("봉만식", 27), Person("국뽕만", 31), Person("한석뽕", 31))
 
 // 지연계산
-people.asSequence() // 원본 컬렉션을 시퀀스로 변환
+println(
+    people.asSequence() // 원본 컬렉션을 시퀀스로 변환
     .map(Person::name)               // 시퀀스도 컬렉션과 똑같은 
     .filter { it.startsWith("한") }   // API를 제공
     .toList() // 결과 시퀀스를 가시 리스트로 변환
+)
 ~~~
 
 - asSequence() 는 컬렉션함수를 시퀀스로 변환해주는 함수이다.
 
 > - 처리할 Data 가 많을경우 시퀀스를 이용해라.
 >- 시퀀스로 처리하면 filter 와 map 처럼 연쇄 호출이 일어나지 않는다.
-   >
+
 - 시퀀스는 중간 처리결과를 저장하지 않고도 연산을 열쇄적으로 적용해서 효율적으로 계산을 수행한다.
 
 ### 시퀀스 연산 실행 : 중간 연산과 최종 연산
 
 - 시퀀스에 대한 연산은 중간연산과 최종연상으로 나뉜다.
+    - 중간연산
+        - 또 다른 시퀀스를 반환한다.
+        - 항상 지연 계산이 수행된다.(최종연산이 수행되면)
+    - 최종연산
+        - 중산연산을 실제로 적용시켜 결과를 반환한다.
+
+~~~kotlin
+// 최종 연산이 없어서 아무런 동작도 수행하지 않는다
+println(
+listOf(1, 2, 3, 4).asSequence()
+    .map { it * it }
+    .filter { it % 2 == 0 }
+)
+
+println(
+// .toList()라는 최종 연산이 있어서 비로소 이 때 map, filter동작도 수행
+listOf(1, 2, 3, 4).asSequence()
+    .map { it * it }
+    .filter { it % 2 == 0 }
+    .toList() // 최종 연산
+)
+// 결과
+// [4, 16]
+~~~
 
 ### 시퀀스 만들기
+- Collection.asSequence() 함수
+    - Collection => Sequence 로 변환
+    
+
+- generateSequence() 함수
+    - 이 전의 원소를 인자로 받아서 다음 원소를 계산하는 시퀀스를 생성
+    
+~~~kotlin
+val naturalNumbers = generateSequence(0) { it + 1 }
+val numbersTo100 = naturalNumbers.takeWhile { it <= 100 }
+// sum() 이라는 최종 연산을 통해 모든 원소를 더한결과를 반환
+println(numbersTo100.sum())
+
+// 결과
+// 5050
+~~~
 
 ### 자바 함수형 인터페이스 활용
+- Java에서 특정 로직을 수행하기 위해서는 익명 클래스를 이용했다
+  
+  => Kotlin에서는 람다를 통해서 이를 대신할 수 있다. (이런 인터페이스를 함수형 인터페이스 or SAM 인터페이스)
 
-### 자바 메서드에 람다를 인자로 전달
-
-### SAM 생성자 : 람다를 함수형 인터페이스로 명시적으로 변경
-
+- SAM 인터페이스
+    - Single Abstract Method 의 약자
+    - 추상 메소드가 단 하나만 있는 인터페이스
+    
 ### 수신 객체 지정 람다: with 와 apply
+- with 함수 : 어떤 객체의 이름을 반복허지 않고도 그 객체에 대해 다양한 연산을 수행할 수 있는 라이브러리
 
-### apply 함수
+~~~kotlin
+fun alphabet() : String{
+  val result = StringBuilder()
+  for(letter in 'A'..'Z'){
+    result.append(letter) // result 중복
+  }
+  result.append("append!") // result 중복 
+  return result.toString() // result 중복
+}
+
+// with() 사용 result 중복 제거
+fun alphabet() : String{
+  val stringBuilder = StringBuilder()
+  return with(stringBuilder){ // 메서드를 호출하려는 수신객체 지정
+    for(letter in 'A'..'Z'){
+      this.append(letter) // this 를 명시해서 앞에서 지정한 수신객체의 메서드를 호출
+    }
+    append("append!") // this 없이도 함수에 바로 접근 가능
+    this.toString() // return 값
+  }
+}
+~~~
+
+- apply 함수 : with 와 유사하지만, 항상 자신에게 전달된 객체를 반환한다는 차이점이 존재한다.
+  - with() 는 람다의 결과를 반환 / apply() 는 객체 자체를 반환
+  
+~~~kotlin
+/* apply 사용 O */
+fun alphabet() = StringBuilder().apply {
+  for(letter in 'A'..'Z'){
+    append(letter) // 함수에 바로 접근해서 사용
+  }
+  append("append!") // 함수에 바로 접근해서 사용
+}.toString()
+~~~
