@@ -6,9 +6,9 @@
 
 ### 람다 소개 : 코드 블록을 함수 인자로 넘기기
 
-- 무명 내부 쿨래스로 리스너 구현하기
+- 익명 내부 클래스로 리스너 구현하기
 
-~~~
+~~~java
 button.setOnClickListener (new OnClickListener() {
     @Override
     public coid onClick(View view){
