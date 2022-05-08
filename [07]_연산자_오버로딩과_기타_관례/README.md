@@ -123,6 +123,34 @@ fun main() {
 일반 함수와 마찬가지로 operator 함수도 오버로딩이 가능함 ex) plus(a, b), plus(a, b, c)
 따라서 이름은 같지만 파라미터 타입이 서로 다른 연산자 함수를 만들 수 있음
 
+### 7.1.2 복합 대입 연산자 오버로딩
+
+plus와 같은 연산자를 오버로딩하면 코틀린은 + 연산자뿐 아니라 그와 관련 있는 연산자인 복합대입연산자(+=, ==)도 함께 지원함.
+(변수가 변경 가능한 경우에만 복합 대입 연산자를 사용 할 수 있음)
+
+```
+data class Point(val x : Int, val y : Int){
+    operator fun plus(other : Point) : Point {
+        return Point( x + other.x, y + other.y)
+    }
+}
+
+fun main(){
+    var p1 = Point(10, 20)
+    p1 += Point(30, 40) // a + b --> a.plus(b)
+    println(p1)
+}
+```
+
+반환 타입이 Unit인 plusAssign 함수를 정의하면 코틀린은 += 연산자에 그 함수를 사용.
+plusAssign : +=
+minusAssign : -=
+timesAssign : *=
+
+```
+
+```
+
 ### 7.3.1 인덱스로 원소에 접근 : get과 set
 
 ```kotlin
