@@ -185,6 +185,59 @@ equals나 compareTo를 호출해야하는 자바와 달리 코틀린에서는 ==
 
 a == b --> a?.equalse(b) ?: (b==null)
 
+```kotlin
+//7.7 equals 메서드 구현하기
+
+//참조 타입을 비교할 때 == 는 두 피연산자의 값을 비교
+//참조 타입을 비교할 때 === 는 두 피연산자의 주소값을 비교
+class Point(val x : Int, val y : Int){
+    override fun equals(obj : Any?) : Boolean{
+        if(obj === this) return true
+        if(obj !is Point) return false
+        return obj.x == x && obj.y == y
+    }
+}
+
+fun main(){
+	println(Point(10, 20) == Point(10, 20))
+    println(null == Point(1, 2))
+}
+
+```
+
+### 7.2.2 순서 연산자: compareTo
+
+자바에서 정렬이나 최댓값, 최솟값 등 값을 비교해야 하는 알고리즘에 사용할 클래스는 Comparable 인터페이스를 구현해야 함
+
+코틀린도 똑같은 Comparable 인터페이스를 지원하고, Comparable 인터페이스 안에 있는 compareTo 메서드를 호출하는 관례를 제공함.
+
+a>=b --> a.compareTo(b) >= 0
+
+```kotlin
+//7.8 compareTo 메서드 구현하기
+class Person(val firstName : String, val lastName : String) : Comparable<Person> {
+
+    override fun compareTo(other : Person) : Int{
+        return compareValuesBy(this, other, Person::lastName, Person::firstName)
+    }
+
+}
+
+fun main() {
+    val p1 = Person("Alice", "Smith")
+    val p2 = Person("Bob", "Johnson")
+	println(p1 < p2)
+    println(p1.compareTo(p2))
+}
+
+```
+
+Comparable 인터페이스를 구현하는 모든 자바 클래스를 코틀린에서는 간결한 연산자 구문으로 비교 할 수 있음
+
+```kotlin
+println("abc"<"bac")
+```
+
 ### 7.3.1 인덱스로 원소에 접근 : get과 set
 
 ```kotlin
