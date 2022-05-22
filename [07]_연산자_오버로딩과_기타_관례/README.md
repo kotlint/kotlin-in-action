@@ -530,9 +530,141 @@ fun main(){
 ### 7.5.1 위임 프로퍼티 소개
 
 ```kotlin
-class Foo{
-    var p : Type by Delegate()
+import kotlin.reflect.*
+
+class Delegate(var value : String){
+
+    private var _value : String? = null
+
+    operator fun getValue(thisRef : Any?, property : KProperty<*>) : String{
+
+        if(_value == null){
+
+        }
+
+        return value
+    }
+    operator fun setValue(thisRef : Any?, property : KProperty<*>, newValue : String){
+        value = newValue
+    }
+}
+
+class Market(val r : String, val d : String){
+    private var _ramen : String? =null
+    var ramen : String by Delegate(r)
+        get(){
+            if(_ramen == null){
+
+            }
+        }
+    var drink : String by Delegate(d)
+}
+
+fun main(){
+    var cu = Market("신라면", "참이슬")
+    println(cu.ramen)
+    println(cu.drink)
+    cu.ramen = "삼양라면"
+    cu.drink = "참이슬 옛날꺼"
+    println(cu.ramen)
+    println(cu.drink)
 }
 ```
 
-p 프로퍼티는 접근자 로직을 다른 객체에게 위임
+ramen, drink 프로퍼티는 접근자 로직을 다른 객체에게 위임
+
+### 7.5.2 위임 프로퍼티 사용 : by lazy()를 사용한 프로퍼티 초기화 지연
+
+지연 초기화(lazy initialization)는 객체의 일부분을 추기화 하지 않고 남겨두었다가 실제 그 부분의 값이 필요할 경우
+
+초기화 할때 사용하는 패턴임
+
+초기화 과정에 자원을 많이 사용하거나 객체를 사용할 때마다 꼭 초기화 하지 않아도 되는 프로퍼티에 대해 지연 초기화 패턴을 사용 할 수 있음.
+
+```kotlin
+data class Address(val name : String, var phone : String, var addr : String=""){}
+fun loadAddrBook(p : Person) : List<Address>{
+    println("Load ${p.name}'s information... Done.")
+    return listOf()
+}
+
+class Person(val name : String){
+    private var _addrBook : List<Address>? = null
+    val addrBook : List<Address>
+    	get(){
+            if(_addrBook == null) _addrBook = loadAddrBook(this)
+            return _addrBook!!
+        }
+}
+
+fun main(){
+    val p = Person("hoho")
+    p.addrBook
+    p.addrBook
+}
+```
+
+```kotlin
+class Market(var r : String?, var d : String?){
+    private var _ramen : String? =null
+    private var _drink : String? =null
+
+    var ramen : String?
+        get(){
+            if(_ramen == null){
+             println("내가.. 내가 10년동안 울면서 후회하고 다짐했는데 꼭 그렇게 라면 다 가져가야만 속이 후련했냐!!")
+			 _ramen = "신라면"
+           	}
+            return _ramen
+        }
+        set(value : String?){
+            _ramen = value
+        }
+    var drink : String?
+        get(){
+            if(_drink == null){
+                println("어허? null이네? 몰디브가서 테라 한잔?")
+				drink = "테라"
+            }
+            return _drink
+        }
+        set(value : String?){
+            _drink = value
+        }
+}
+
+fun main(){
+    var cu = Market(null, null)
+    println(cu.ramen)
+    println(cu.drink)
+    cu.ramen = "삼양라면"
+    cu.drink = "참이슬 옛날꺼"
+    println(cu.ramen)
+    println(cu.drink)
+}
+
+```
+
+lazy 사용
+
+```kotlin
+class Market(){
+	val ramen by lazy({loadRamen(this)})
+    val drink by lazy({loadDrink(this)})
+
+
+    fun loadRamen(market : Market) : String{
+		return "신라면"
+    }
+
+    fun loadDrink(market : Market) : String{
+		return "테라"
+    }
+}
+
+fun main(){
+    var cu = Market()
+    println(cu.ramen)
+    println(cu.drink)
+}
+```
