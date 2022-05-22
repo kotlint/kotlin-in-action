@@ -128,7 +128,7 @@ fun main() {
 plus와 같은 연산자를 오버로딩하면 코틀린은 + 연산자뿐 아니라 그와 관련 있는 연산자인 복합대입연산자(+=, ==)도 함께 지원함.
 (변수가 변경 가능한 경우에만 복합 대입 연산자를 사용 할 수 있음)
 
-```
+```kotlin
 data class Point(val x : Int, val y : Int){
     operator fun plus(other : Point) : Point {
         return Point( x + other.x, y + other.y)
@@ -145,11 +145,45 @@ fun main(){
 반환 타입이 Unit인 plusAssign 함수를 정의하면 코틀린은 += 연산자에 그 함수를 사용.
 plusAssign : +=
 minusAssign : -=
-timesAssign : *=
+timesAssign : \*=
 
+### 7.1.2 단항 연산자 오버로딩
+
+```kotlin
+data class Point(val x : Int, val y : Int){
+operator fun unaryMinus() : Point {
+        return Point(-x, -y)
+    }
+
+operator fun not() : Point {
+    return Point(0, 0)
+}
+
+}
+
+// operator fun Point.unaryMinus() : Point {
+//         return Point(-x, -y)
+// }
+
+
+fun main(){
+    val p = Point(10, 20)
+    println(-p)
+    println(!p)
+}
 ```
 
-```
+## 7.2 비교 연산자 오버로딩
+
+코틀린에서는 모든 객체에 대해 비교 연산자를 수행 할 수 있음
+
+equals나 compareTo를 호출해야하는 자바와 달리 코틀린에서는 == 비교 연산자를 직접 사용할 수 있음
+
+관례(convention)를 살펴보자
+
+### 7.2.1 동등성 연산자: equals
+
+a == b --> a?.equalse(b) ?: (b==null)
 
 ### 7.3.1 인덱스로 원소에 접근 : get과 set
 
