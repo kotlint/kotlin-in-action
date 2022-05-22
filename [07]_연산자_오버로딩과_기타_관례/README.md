@@ -552,11 +552,6 @@ class Delegate(var value : String){
 class Market(val r : String, val d : String){
     private var _ramen : String? =null
     var ramen : String by Delegate(r)
-        get(){
-            if(_ramen == null){
-
-            }
-        }
     var drink : String by Delegate(d)
 }
 
