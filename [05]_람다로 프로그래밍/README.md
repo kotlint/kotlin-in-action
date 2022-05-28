@@ -19,7 +19,7 @@ button.setOnClickListener (new OnClickListener() {
 
 - 람다로 리스너 구현
 
-~~~
+~~~kotlin
 button.setOnClickListener {/*클릭시 수행할 동작*/}
 ~~~
 
