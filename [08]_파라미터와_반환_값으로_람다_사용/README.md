@@ -97,13 +97,95 @@ println(averageWindowsDUration)
 ### 고차함수를 여기저기 활용하면 전통적인 루프와 조건문을 사용할 때보다 더 느려질수 있습니다 하지만 inline을 통해 람다의 성능 개선이 가능합니다
 
 ## 인라인 함수: 람다의 부가 비용 없애기
+코틀린에서 람다를 함수 인자로 넘기는 구문이 if 나 for와 일반 문장과 비슷합니다. 하지만 코드의 성능은 훨씬 느리게 작동할 수 있습니다. 람다가 변수를 포획하면 람다가 생성되는 시점마다 새로운 무명 클래스 객체가 생기기 때문에 람다를 사용하는 구현은 똑같은 작업을 수행하는 일반 함수를 사용한 구현보다 덜 효율적 입니다.
+그래서 반복되는 코드를 별도의 라이브러리 함수로 뺴내되 컴파일러가 자바의 일반 명령문만큼의 효율적인 코드를 생성할 수 있습니다. inline 변경자를 붙이면 그 함수를 호출하는 모든 문장을 함수 본문에 해당하는 바이트코드로 바꿔치기 해주빈다 이 과정은 부가 비용을 없앨수 있습니다.
+## 인라이닝이 작동하는 방식
+어떤 함수를 inline으로 선언하면그 함수의 본문이 인라인이 됩니다. 
+<br>synchronized를 inline 으로 선언했으므로 synchronized를 호출하는 코들는 모두 자바의 synchronized문과 같아지게 됩니다. <br/>
+```
+inline fun <T> synchronized (lock : Lock, action : () -> T) : T {
+  lock.lock()
+  try {
+    return action()
+  }
+  finally {
+    lock.unlock()
+  }
+}
+val l = Lock)
+synchronized(l) {}
+```
+## 인라인 함수의 한계
+인라이닝을 하는 방식으로 인해 람다를 사용하는 모든 함수를 인라이닝할 수는 없습니다. 함수가 인라이닝될 때 그 함수에 인자로 전달되 람다 식의 본문은 결과 코드에 직접 들어갈 수 있습니다 하지만 이렇게 람다가 본문에 직접 펼쳐지기 떄문에 함수가 파라미터로 전달받은 람다를 본문에 사용하는 방식이 한정될 수밖에 없습니다. 이미 받은 라맏를 다른 변수에 저장한다면 람다를 표현하는 객체가 어딘가는 존재해야 하기 때문에 람다를 인라이닝할 수 없습니다. **하지만 본문에서 람다 식을 바로 호출하거나 람다 식을 인자로 전달받아 바로 호출하는 경우에는 그 람다를 인라이닝할 수 있습니다.
+ 
+## 컬렌션 연산 인라이닝
+코틀린 표준 라이브러리 컬렉션 함수는 대부분 람다를 인자로 받습니다. 여기서 드는 생각은 표준 라이브러리 함수를 사용하지 않고 직접 이런 연산을 구현한다면 더 효율적이지 않을까 입니다
 
+**람다를 사용해 컬렉션 거르기**
+```
+data class Persone(val name: String, val age: Int)
+val people = listOf(Person("Alice", 29), Person("Bob", 31))
 
+prinln(people.filter {it.age < 30 })
+>>> Person(name : "Alice",age : 29)
+```
+**람다 X 컬렉션을 직접 거르기**
+```
+val result = mutableListOf<Person>()
+for (person in people) {
+  if (person.age < 30) result.add(person)
+}
+prinln(result)
+>>> Person(name : "Alice",age : 29)
+```
+filter는 인라인 함수입니다 그래서 앞 예제에서 filter를 써서 생긴 바이트코드와 뒤 예제에서 생긴 바이트코드는 거의 같습니다. 
 
+## 함수의 인라인으로 선언해야 하는 경우
+inline 키워드를 배우고 나면 더 빠르게 만들기 위해 inline을 많이 사용할것이지만 무분별하게 사용을 하는것은 좋은 방법이 아닙니다. inline은 람다를 인자로 받는 함수에만 성능이 좋아질 가능성이 높습니다.
 
+## 자원 관리를 위해 인라인된 람다 사용
+람다로 중복을 없앨 수 있는 일반적인 패턴 중 한가지는 어떤 작업을 하기 전에 자원을 획득하고 작업을 마친 후 자원을 해제하는 자원 관리입니다. 여기서 자원은 파일, 락데이터베이스 트랜잭션 등 여러 다른 대상을 가리킬 수 있습니다. 자원 관리 패턴을 만들때 보통 try/finally 문을 사용합니다. 이전에는 try/finally 문의 로직을 함수로 캡슐화 하고 자우너을 사용하는 코드를 람다식으로 그 함수에 전달하는 예제를 본적이 있습니다. 그 예제에는 자바의 synchronized문과 똑같이 구문을 제공하는 synchronized함수가 있었습니다 하지만 코틀린 라이브러리에는 좀 더 코틀린 다운 api를 통해 같은 기능을 제공하는 wihLock이라는 함수가 있습니다 withLock은 Lock 인터페이스의 확장 함수입니다
+<br>**withLock 사용법**<br/>
+```
+val l: Lock = ...
+l.withLock {
+  //락에 의해 보호되는 자원
+}
+```
+## 고차 함수 안에서 흐름 제어
+루프와 같은 명령형 코드를 람다로 바꾸기 시작했다면 return 문제에 부딪힐 겁니다. 루프의 중간에 있는 return문의 의미는 이해하기 쉽지만 그 루프를 filter와 같이 라맏를 호출하는 함수로 바꾸고 인자로 전달하는 람다 안에서 return을 사용할 수 있습니다.
 
+### 람다 안의 return
+일반 루트 안에서 return 사용
+```
+data class Preson(val name: String, val age: Int) 
+val people = listOf(Person("Alice",29), Person("Bob", 31)
+fun lookForAlice(people: List<Person>) {
+  for (person in people) {
+    if (person.name == "Alice") {
+      println("Found!")
+      return
+    }
+  }
+  println("Alice is not found ")
+}
+lookForAlice(people)
+>>> Found!
+```
+람다 안에서 return을 사용하면 람다로부터만 반환되는 게 아니라 그 람다를 호출하는 함수가 실행을 끝내고 반환됩니다. 
 
+### 람다로부터 반환 : 레이블을 사용한 return
+람다 식에서도 로컬 return을 사용할 수 있습니다. 람다 안에서 로컬 return은 for루프의 break와 비슷한 역할을 합니다. 로컬 return은 람다의 실행을 끝내고 람다를 호출했던 코드의 실행을 계속 이어갑니다. 로컬 return과 넌로컬 return을 구분하기 우해 레이블을 사용해야 합니다. return으로 실행을 끝내고 싶은 람다 식 앞에 레이블을 붙이고, return 키워드 뒤에 그 레이블을 추가하면 됩니다.
+<br>람다 식에 레이블을 붙이려면 레이블 이름 뒤에 @ 문자를 추가한 것을 람다를 여는 { 앞에 넣으면 됩니다. 람다에 레이블을 붙여서 사용하는 대신 람다를 인자로 받는 인라인 함수의 이름을 return 뒤에 레이블로 사용해도 됩니다<br/>
 
-
-
-
+### 무명 함수 : 기본적으로 로컬 return
+무명 함수는 코드 블록을 함수에 넘길 때 사용할 수 있는 다른 방법입니다.
+```
+fun lookForAlice(people: List<Person>) {
+  people.forEach(fun (person) {
+    if (person.name == "Alice") return
+    prinln("${person.name} is not Alice")
+  }
+}
+```
+무명 함수는 일반 함수와 비슷해 보이지만 차이는 이름이나 파라미터 타입을 생략할 수 있다는 점 뿐입니다.
