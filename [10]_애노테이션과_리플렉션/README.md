@@ -5,6 +5,9 @@
 > - [Reflection](https://github.com/BAEKJungHo/deepdiveinreflection/blob/main/contents/Java%20Reflection.md)
 > - [Annotation](https://github.com/BAEKJungHo/deepdiveinreflection/blob/main/contents/Annotation.md)
 
+애노테이션은 사실 아무 기능이 없는 Marker 같은 역할을 한다. 하지만, 우리가 프로그래밍을 하면서 다양한 애노테이션들을 사용하고 있으며, 각 어노테이션들은 특정 역할을 담당한다. 
+이게 가능한 이유는 리플렉션이라는 기능 때문이다.
+
 ## 자바와는 조금 다른 문법 
 
 ```kotlin
@@ -37,3 +40,19 @@ fun remove(index: Int) {}
     
 > 일반 프로퍼티를 애노테이션 인자로 사용하려 시도하면, "Only const val can be used in constant expressions" 라는 오류가 발생한다.
 
+## 사용자 지점 대상 지정 문법
+
+> @get:Rule: Rule 애노테이션을 Getter 에 적용하라는 의미
+
+```kotlin
+class Test {
+  @get:Rule
+  val folder = TemporaryFolder()
+  
+  ...
+}
+```
+
+- __자바에 선언된 애노테이션을 사용해 프로퍼티에 애노테이션을 붙이는 경우 기본적으로 프로퍼티 `필드`에 적용된다.__
+- __코틀린으로 애노테이션을 선언하면 경우는 프로퍼티에 직접 적용 할 수 있는 애노테이션을 만들 수 있다.__
+  - 사용자
