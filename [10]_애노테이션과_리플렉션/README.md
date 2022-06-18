@@ -237,3 +237,55 @@ interface KCallable<out R> {
   ...
 }
 ```
+
+call 을 사용할 떄는 함수 인자를 vararg 리스트로 전달한다.
+
+```kotlin
+fun foo(x: Int) = println(x)
+>>> val kFunction = ::foo
+>>> kFunction.call(42)
+```
+
+call 에 넘긴 인자 개수와 함수에 정의된 파라미터 개수가 맞아 떨어져야 한다. 예를 들어, kFunction.call() 로 호출하면 `IllegalArgumentException: Callable expects 1 arguements,
+but 0 were provided` Runtime Exception 이 발생한다.
+
+함수를 호출하기 위해 더 구체적인 메서드를 사용할 수도 있다.
+
+`KFunctionN` 을 사용하면 된다.
+
+```kotlin
+kFunction1 // 1개의 인자를 받으며, 1개의 인자를 받아서 호출할 수 있는 invoke 메서드도 제공한다.
+kFunction2 // 2개의 ...
+...
+```
+
+kFunction 의 invoke 메서드를 호출할 때는 인자 개수나 타입이 맞아 떨어지지 않으면 컴파일이 안된다.
+
+__KFunctionN 은 KFunction 을 확장하며, N 과 파라미터 개수가 같은 invoke 를 추가로 포함한다.__
+
+예를 들어, KFunction2<P1, P2, R> 에는 operator fun invoke(p1: P2, p2: P2): R 선언이 들어있다.
+
+이런 함수 타입들은 컴파일러가 생성한 합성 타입(synthetic compiler-generated type) 이다. 코틀린에서는 컴파일러가 생성한 합성 타입을 사용하기 때문에 원하는 수 만큼 많은 파라미터를 갖는 함수에
+대한 인터페이스를 사용할 수 있다.
+
+### KProperty
+
+```kotlin
+val counter = 0
+>>> val kProperty = ::counter
+>> kProperty.setter.call(21) // reflection 을 통해 세터를 호출하면서 21 인자를 넘긴다.
+>> println(kProperty.get()) // 21
+```
+
+얘도 마찬가지로 KProperty 를 확장하는 KPropertyN 이 존재한다.
+
+## 코틀린 리플렉션 API 인터페이스 계층 구조
+
+- __KAnnotatedElement__
+  - __KClass__
+  - __KCallable__
+    - KFunction
+      - KFunctionN, KProperty.Getter, KProperty.Setter
+    - KProperty
+      - KMutableProperty, KPropertyN
+  - __KParameter__
