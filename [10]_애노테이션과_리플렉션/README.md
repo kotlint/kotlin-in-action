@@ -163,3 +163,47 @@ data class Person(
 
 제이키드 라이브러리에 있는 @DeserializeInterface 는 인터페이스 타입인 프로퍼티에 대한 역직렬화를 제어할 때 쓰는 애노테이션이다. 인터페이스의 인스턴스를 직접 만들 수는 없다.
 따라서, 역직렬화 시 어떤 클래스를 사용해 인터페이스를 구현할지 를 지정할 수 있어야 한다.
+
+```kotlin
+@Target(AnnotationTarget.PROPERTY)
+annotation class DeserializeInterface(val targetClass: KClass<out Any>)
+```
+
+KClass 는 자바 java.lang.Class 타입과 같은 역할을 하는 코틀린 타입니다. __코틀린 클래스에 대한 참조를 저장할 때 KClass 타입을 사용한다.__
+
+CompanyImpl::class 타입은 `KClass<CompanyImpl>` 이며, `KClass<out Any>` 의 하위 타입이다.
+
+KClass 의 타입 파라미터를 쓸 때 out 변경자 없이 `KClass<Any>` 라고 쓰면 Deserialize Interface 에게 CompanyImpl::class 를 넘길 수 없고 오직 Any::class 만 넘길 수 있다.
+반면 out 키워드가 있으면 모든 코틀린 타입 T 에 대해 `KClass<T>` 가 `KClass<out Any>` 의 하위 타입이 된다.(공변성)
+
+## 애노테이션 파라미터로 제네릭 클래스 받기
+
+@CustomSerializer 는 `커스텀 직렬화 클래스`에 대한 참조를 인자로 받는다. 이 직렬화 클래스는 ValueSerializer 인터페이스를 구현해야만 한다.
+
+```kotlin
+interface ValueSerializer<T> {
+    fun toJsonValue(value: T): Any?
+    fun fromJsonValue(jsonValue: Any?): T
+}
+```
+
+```kotlin
+data class Person(
+  val name: String,
+  @CustomSerializer(DateSerializer::class) val birthdate: Date
+)
+```
+
+ValueSerializer 클래스는 제네릭 클래스라서 타입 파라미터가 있다. 따라서 ValueSerializer 타입을 참조하려면 항상 타입 인자를 제공해야 한다.
+하지만 이 애노테이션이 어떤 타입에 대해 쓰일지 전혀 알 수 없으므로 스타 프로젝션을 사용할 수 있다.
+
+```kotlin
+@Target(AnnotationTarget.PROPERTY)
+annotation class CustomSerializer(val serializerClass: KClass<out ValueSerializer<*>>)
+```
+
+`out ValueSerializer<*>` ValueSerializer 뿐만 아니라 ValueSerializer 를 구현하는 모든 클래스를 받아 들인다.
+
+# 리플렉션: 실행 시점에 코틀린 객체 내부 관찰
+
+애노테이션에 저장된 데이터에 접근하기 위해서는 리플렉션을 사용해야 한다.
