@@ -55,4 +55,111 @@ class Test {
 
 - __자바에 선언된 애노테이션을 사용해 프로퍼티에 애노테이션을 붙이는 경우 기본적으로 프로퍼티 `필드`에 적용된다.__
 - __코틀린으로 애노테이션을 선언하면 경우는 프로퍼티에 직접 적용 할 수 있는 애노테이션을 만들 수 있다.__
-  - 사용자
+  - 사용자 지점 대상을 지정할 때 지원하는 대상 목록
+    - property: 프로퍼티 전체. 자바에서 선언된 애노테이션에는 이 사용 지점 대상을 사용할 수 없다.
+    - field: 프로퍼티에 의해 생성되는 (뒷받침하는) 필드
+    - get: 프로퍼티 게터
+    - set: 프로퍼티 세터
+    - receiver: 확장 함수나 프로퍼티의 수신 객체 파라미터
+    - param: 생성자 파라미터
+    - setparam: 세터 파라미터
+    - delegate: 위임 프로퍼티의 위임 인스턴스를 담아둔 필드
+    - file: 파일 안에 선언된 최상위 함수와 프로퍼티를 담아두는 클래스
+
+## 자바 API 를 애노테이션으로 제어하기
+
+- @JvmName: 코틀린 선언이 만들어내는 자바 필드나 메서드 이름을 변경
+- @JvmStatic: 메서드, 객체 선언, 동반 객체에 적용하면 그 요소가 자바 정적 메서드로 노출됨
+- @JvmOverloads: 디폴트 파라미터 값이 있는 함수에 대해 컴파일러가 자동으로 오버로딩한 함수를 생성
+- @JvmField: 프로퍼티에 사용하면 게터나 세터가 없는 공개된(public) 자바 필드로 프로퍼티를 노출 시킨다.
+
+## 애노테이션을 활용한 JSON 직렬화 제어
+
+- __직렬화(serialization)__
+  - 객체를 저장장치에 저장하거나 네트워크를 통해 전송하기 위해 텍스트나 이진 형식으로 변환하는 것
+- __역직렬화(deserialization)__
+  - 텍스트나 이진 형식으로 저장된 데이터로부터 원래의 객체를 만들어낸다.
+
+직렬화에 자주 쓰이는 형식에는 JSON 이 있다. JSON <-> Object 를 변환할 때 자주 쓰이는 라이브러리로는 Jackson, GSON 이 있다.
+
+## 제이키드 라이브러리 만들기
+
+> https://github.com/yole/jkid
+
+```kotlin
+// Person 클래스 직렬화, 역직렬화 하기
+data class Person(val name: String, val age: Int)
+
+val person = Person("BAEK", 29)
+println(serialize(person))
+// {"age": 29, "name": "BAEK"}
+
+val json = {"age": 29, "name": "BAEK"}
+println(deserialize<Person>(json))
+// Person(name="BAEK", age=29)
+```
+
+deserialize 에 객체의 타입을 명시해야하는 이유는, JSON 에는 객체의 타입이 저장되지 않기 때문에 JSON 데이터로부터 인스턴스를 만들려면 타입 인자로 클래스를 명시해야 한다.
+
+제이키드 라이브러리의 두 애노테이션에 대해서 살펴보자.
+
+- __@JsonExclude__
+  - 애노테이션을 사용하면 직렬화나 역직렬화 시 그 프로퍼티를 무시할 수 있다.
+- __@JsonName__
+  - 애노테이션을 사용하면 프로퍼티를 표현하는 키/값 싸으이 키로 프로퍼티 이름 대신 애노테이션이 지정한 이름을 쓰게할 수 있다.
+
+```kotlin
+data class Person(
+  @JsonName("alias") val firstName: String,
+  @JsonExclude val age: Int? = null
+)
+```
+
+## 애노테이션 선언
+
+- 코틀린
+
+```kotlin
+// 파라미터가 있는 애노테이션을 정의하기 위해서는
+// val 이 필수로 붙어야 하며, 생성자 파라미터를 선언해야 한다.
+// 본문은 작성할 수 없다.
+annotation class JsonName(val name: String) 
+```
+
+- 자바
+
+```java
+public @interface JsonName {
+  String value()
+}
+```
+
+자바의 경우에는 value() 메서드를 사용하는데, value 메서드는 특별하다. @WebServlet("abc") 와 같이 애노테이션에 이름을 사용할 수 있는 이유가, 자바 애노테이션에 value() 메서드가 있기 때문이다.
+
+> [How can I do Java annotation like @name("Luke") with no attribute inside parenthesis?](https://stackoverflow.com/questions/11786354/how-can-i-do-java-annotation-like-nameluke-with-no-attribute-inside-parenth)
+
+## 메타애노테이션
+
+메타애노테이션은 애노테이션을 처리하는 방법을 제어하는 역할을 한다.
+
+메타애노테이션은 애노테이션에 애노테이션을 붙일 수 있다.
+
+> [Annotation](https://github.com/BAEKJungHo/deepdiveinreflection/blob/main/contents/Annotation.md)
+
+## 애노테이션 파라미터 클래스로 사용 
+
+```kotlin
+interface Company {
+  val name: String
+}
+
+data class CompanyImpl(override val name: String): Company
+
+data class Person(
+  val name: String,
+  @DeserializeInterface(CompanyImpl:class) val company: Company
+)
+```
+
+제이키드 라이브러리에 있는 @DeserializeInterface 는 인터페이스 타입인 프로퍼티에 대한 역직렬화를 제어할 때 쓰는 애노테이션이다. 인터페이스의 인스턴스를 직접 만들 수는 없다.
+따라서, 역직렬화 시 어떤 클래스를 사용해 인터페이스를 구현할지 를 지정할 수 있어야 한다.
