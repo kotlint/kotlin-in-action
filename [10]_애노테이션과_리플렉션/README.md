@@ -1,9 +1,6 @@
 # 애노테이션과 리플렉션
 
 > 자바를 공부했을때, 애노테이션과 리플렉션은 따로 공부하는 것보다 같이 공부하는 것이 좋다고 생각했는데, 개인적으로 이 책에서 애노테이션과 리플렉션을 묶어서 단원으로 낸것이 마음에 든다.
->
-> - [Reflection](https://github.com/BAEKJungHo/deepdiveinreflection/blob/main/contents/Java%20Reflection.md)
-> - [Annotation](https://github.com/BAEKJungHo/deepdiveinreflection/blob/main/contents/Annotation.md)
 
 애노테이션은 사실 아무 기능이 없는 Marker 같은 역할을 한다. 하지만, 우리가 프로그래밍을 하면서 다양한 애노테이션들을 사용하고 있으며, 각 어노테이션들은 특정 역할을 담당한다. 
 이게 가능한 이유는 리플렉션이라는 기능 때문이다.
@@ -206,4 +203,37 @@ annotation class CustomSerializer(val serializerClass: KClass<out ValueSerialize
 
 # 리플렉션: 실행 시점에 코틀린 객체 내부 관찰
 
-애노테이션에 저장된 데이터에 접근하기 위해서는 리플렉션을 사용해야 한다.
+애노테이션에 저장된 데이터에 접근하기 위해서는 리플렉션을 사용해야 한다. 리플렉션은 실행 시점에(동적으로) 객체의 프로퍼티와 메서드에 접근할 수 있게 해주는 방법이다.
+
+> [Reflection](https://github.com/BAEKJungHo/deepdiveinreflection/blob/main/contents/Java%20Reflection.md)
+
+코틀린에서 리플렉션을 사용하려면 두 가지 서로 다른 리플렉션 API 를 다뤄야 한다. __리플렉션을 사용하는 자바 라이브러리와 코틀린 코드는 완전히 호환된다.__
+
+- __java.lang.reflect__
+- __kotlin.reflect__
+  - 이 API 는 자바에는 없는 프로퍼티나 널이 될 수 있는 타입과 같은 코틀린 고유 개념에 대한 리플렉션을 제공한다.
+  - 하지만 현재 코틀린 리플렉션 API 는 자바 리플렉션 API 를 완전히 대체할 수 있는 복잡한 기능을 제공하지는 않는다.
+  - 따라서, 자바 리플렉션을 대안으로 사용해야 하는 경우가 생긴다.
+  - 코틀린 리플렉션 API 를 사용해도 다른 JVM 언어에서 생성한 바이트코드를 충분히 다룰 수 있다.
+
+## 코틀린 리플렉션 API: KClass, KCallable, KFunction, KProperty
+
+```kotlin
+import kotlin.reflect.full.*
+
+val person = Person("Alice", 29)
+val kClass = person.javaClass.kotlin // KClass<Person> 의 인스턴스를 반환
+println(kClass.simpleName) // Person
+```
+
+### KCallable
+
+- KCallable 은 함수와 프로퍼티를 아우르는 공통 상위 인터페이스이다.
+- KCallable 의 call 을 사용하면 함수나 프로퍼티의 게터를 호출할 수 있다.
+
+```kotlin
+interface KCallable<out R> {
+  fun call(vararg args: Any?): R
+  ...
+}
+```
